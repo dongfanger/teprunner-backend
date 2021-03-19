@@ -17,6 +17,11 @@
       "name": "管理员",
       "auth": [
         {
+          "id": "teprunner",
+          "name": "接口自动化",
+          "access": true
+        },
+        {
           "id": "console",
           "name": "后台管理",
           "access": true
@@ -33,6 +38,11 @@
       "name": "测试",
       "auth": [
         {
+          "id": "teprunner",
+          "name": "接口自动化",
+          "access": true
+        },
+        {
           "id": "console",
           "name": "后台管理",
           "access": false
@@ -48,6 +58,11 @@
     "fields": {
       "name": "开发",
       "auth": [
+        {
+          "id": "teprunner",
+          "name": "接口自动化",
+          "access": true
+        },
         {
           "id": "console",
           "name": "后台管理",

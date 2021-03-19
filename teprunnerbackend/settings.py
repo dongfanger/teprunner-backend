@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'user.apps.UserConfig',
+    'teprunner.apps.TeprunnerConfig',
 ]
 
 MIDDLEWARE = [
