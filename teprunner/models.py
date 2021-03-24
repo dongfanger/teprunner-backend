@@ -40,3 +40,26 @@ class Fixture(BaseTable):
     code = models.TextField("代码", max_length=30000, null=False)
     creator_nickname = models.CharField("创建人昵称", null=False, max_length=64)
     project_id = models.IntegerField("项目id", null=False)
+
+
+class Case(BaseTable):
+    class Meta:
+        db_table = "case"
+
+    desc = models.CharField("用例描述", max_length=500, null=False)
+    code = models.TextField("代码", max_length=30000, null=False)
+    creator_nickname = models.CharField("创建人昵称", null=False, max_length=64)
+    project_id = models.IntegerField("项目id", null=False)
+
+
+class CaseResult(BaseTable):
+    class Meta:
+        db_table = "case_result"
+
+    case_id = models.IntegerField("用例id", null=False)
+    result = models.CharField("运行结果", max_length=50, null=False)
+    elapsed = models.CharField("耗时", max_length=50, null=False)
+    output = models.TextField("输出日志", null=False, default="")
+    run_env = models.CharField("运行环境", max_length=20, null=False)
+    run_user_nickname = models.CharField("运行用户昵称", null=False, max_length=64)
+    run_time = models.DateTimeField("运行时间", auto_now=True)
