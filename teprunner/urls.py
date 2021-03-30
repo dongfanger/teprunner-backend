@@ -9,7 +9,7 @@
 
 from django.urls import path
 
-from teprunner.views import project, envvar, fixture, case
+from teprunner.views import project, envvar, fixture, case, run
 
 urlpatterns = [
     path(r"projects", project.ProjectViewSet.as_view({
@@ -52,6 +52,8 @@ urlpatterns = [
         "put": "update",
         "delete": "destroy"
     })),
-    path(r"cases/<int:pk>/result", case.case_result),
     path(r"cases/<int:pk>/copy", case.copy_case),
+
+    path(r"cases/<int:pk>/run", run.run_case),
+    path(r"projects/<int:pk>/export", project.export_project),
 ]

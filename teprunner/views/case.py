@@ -6,6 +6,10 @@
 @Date    :  2021/1/21 14:20
 @Desc    :  
 """
+import time
+
+from channels.generic.websocket import JsonWebsocketConsumer
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -64,12 +68,54 @@ class CaseViewSet(ModelViewSet):
         return self.update(request, *args, **kwargs)
 
 
-@api_view(['GET'])
-def case_result(request, *args, **kwargs):
-    case_id = kwargs["pk"]
-    instance = CaseResult.objects.get(case_id=case_id)
-    serializer = CaseResultSerializer(instance=instance)
-    return Response(serializer.data)
+class CaseResultView(JsonWebsocketConsumer):
+    group_name = None
+    case_id = None
+
+    def connect(self):
+        self.case_id = self.scope['url_route']['kwargs']['case_id']
+        self.group_name = str(self.case_id)
+        self.channel_layer.group_add(
+            self.group_name,
+            self.channel_name
+        )
+        self.accept()
+
+    def disconnect(self, close_code):
+        self.channel_layer.group_discard(
+            self.group_name,
+            self.channel_name
+        )
+
+    def receive_json(self, content, **kwargs):
+        case = Case.objects.get(id=self.case_id)
+        res = {"desc": case.desc, "creatorNickname": case.creator_nickname,
+               "result": "", "elapsed": "", "output": "",
+               "runEnv": "", "runUserNickname": "", "runTime": ""}
+        self.send_json(res)
+        timeout = 60
+        count = 1
+        while count <= timeout:
+            res["output"] = f"用例结果查询中{count}s"
+            self.send_json(res)
+            try:
+                instances = CaseResult.objects.filter(case_id=self.case_id).order_by('-run_time')
+                serializer = CaseResultSerializer(instance=instances[0])
+                res["result"] = serializer.data.get("result")
+                res["elapsed"] = serializer.data.get("elapsed")
+                res["output"] = serializer.data.get("output")
+                res["runEnv"] = serializer.data.get("runEnv")
+                res["runUserNickname"] = serializer.data.get("runUserNickname")
+                res["runTime"] = serializer.data.get("runTime")
+                self.send_json(res)
+                break
+            except ObjectDoesNotExist:
+                count += 1
+                time.sleep(1)
+        if count > timeout:
+            res["output"] = f"查询时间超过{timeout}s"
+            self.send_json(res)
+        self.close()
 
 
 @api_view(['POST'])

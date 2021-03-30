@@ -15,7 +15,13 @@ Including another URLconf
 """
 from django.urls import path, include
 
+from teprunner.views.case import CaseResultView
+
 urlpatterns = [
     path('api/users/', include('user.urls')),
-    path('api/teprunner/', include('teprunner.urls'))
+    path('api/teprunner/', include('teprunner.urls')),
+]
+
+websocket_urlpatterns = [
+    path(r'ws/teprunner/cases/<int:case_id>/result/', CaseResultView.as_asgi()),
 ]

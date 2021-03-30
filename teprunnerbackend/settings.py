@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'user.apps.UserConfig',
     'teprunner.apps.TeprunnerConfig',
+    'channels'
 ]
 
 MIDDLEWARE = [
@@ -145,3 +146,11 @@ JWT_AUTH = {
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = ()
+
+ASGI_APPLICATION = 'teprunnerbackend.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
