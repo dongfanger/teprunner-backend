@@ -109,7 +109,7 @@ class CaseResultView(JsonWebsocketConsumer):
                 res["runTime"] = serializer.data.get("runTime")
                 self.send_json(res)
                 break
-            except ObjectDoesNotExist:
+            except (ObjectDoesNotExist, IndexError):
                 count += 1
                 time.sleep(1)
         if count > timeout:
