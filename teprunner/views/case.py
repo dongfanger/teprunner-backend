@@ -16,7 +16,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from teprunner.models import Case, CaseResult
+from teprunner.models import Case, CaseResult, PlanCase
 from teprunner.serializers import CaseSerializer, CaseResultSerializer, CaseListSerializer
 from user.pagination import CustomPagination
 
@@ -37,6 +37,19 @@ class CaseViewSet(ModelViewSet):
         api = request.GET.get("api")
         if api:
             query &= Q(code__icontains=api)
+        exclude_plan_id = request.GET.get("excludePlanId")
+        if exclude_plan_id:
+            plan_case_ids = [plan_case.case_id for plan_case in PlanCase.objects.filter(plan_id=exclude_plan_id)]
+            query &= ~Q(id__in=plan_case_ids)
+        keyword = request.GET.get("keyword")
+        if keyword:
+            try:
+                int(keyword)
+                case_id_query = Q(id=keyword)
+            except ValueError:
+                case_id_query = Q()
+            case_desc_query = Q(desc__icontains=keyword)
+            query &= (case_id_query | case_desc_query)
         queryset = Case.objects.filter(query).order_by('-id')
         cp = CustomPagination()
         page = cp.paginate_queryset(queryset, request=request)

@@ -14,12 +14,13 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import jwt
 import yaml
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from teprunner.models import Fixture, EnvVar, Case, CaseResult, Project
-from teprunner.serializers import CaseResultSerializer
+from teprunner.models import Fixture, EnvVar, Case, CaseResult, Project, Plan, PlanCase, PlanResult
+from teprunner.serializers import CaseResultSerializer, PlanResultSerializer
 
 
 def fixture_filename(fixture_id):
@@ -146,7 +147,7 @@ def clean_tests_dir(tests_dir):
                 shutil.rmtree(path)
 
 
-def pull_tep_files(project_id, project_dir,  run_env):
+def pull_tep_files(project_id, project_dir, run_env):
     fixtures_dir = os.path.join(project_dir, "fixtures")
     write_fixture_env_vars_file(project_id, fixtures_dir)
     write_fixture_file(project_id, fixtures_dir)
@@ -167,32 +168,60 @@ def delete_case_result(case_id, run_user_nickname):
         pass
 
 
-def pytest_subprocess(cmd, case_id, run_env, run_user_nickname):
+def delete_plan_result(plan_id, case_id, run_user_nickname):
+    try:
+        instance = PlanResult.objects.get(plan_id=plan_id, case_id=case_id, run_user_nickname=run_user_nickname)
+        instance.delete()
+    except ObjectDoesNotExist:
+        pass
+
+
+def pytest_subprocess(cmd, case_id, run_env, run_user_nickname, plan_id=None):
     output = subprocess.getoutput(cmd)
-    return output, cmd, case_id, run_env, run_user_nickname
+    return output, cmd, case_id, run_env, run_user_nickname, plan_id
 
 
 def save_case_result(pytest_result):
-    output, cmd, case_id, run_env, run_user_nickname = pytest_result.result()
+    output, cmd, case_id, run_env, run_user_nickname, plan_id = pytest_result.result()
     summary = output.split("\n")[-1]
     result, elapsed, = summary.strip("=").strip().split(" in ")
-    data = {
-        "caseId": case_id,
-        "result": result,
-        "elapsed": elapsed,
-        "output": output,
-        "runEnv": run_env,
-        "runUserNickname": run_user_nickname
-    }
-    try:
-        instance = CaseResult.objects.get(case_id=case_id, run_user_nickname=run_user_nickname)
-        serializer = CaseResultSerializer(data=data, instance=instance)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-    except ObjectDoesNotExist:
-        serializer = CaseResultSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+    if not plan_id:
+        data = {
+            "caseId": case_id,
+            "result": result,
+            "elapsed": elapsed,
+            "output": output,
+            "runEnv": run_env,
+            "runUserNickname": run_user_nickname
+        }
+        try:
+            instance = CaseResult.objects.get(case_id=case_id, run_user_nickname=run_user_nickname)
+            serializer = CaseResultSerializer(data=data, instance=instance)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ObjectDoesNotExist:
+            serializer = CaseResultSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+    else:
+        data = {
+            "planId": plan_id,
+            "caseId": case_id,
+            "result": result,
+            "elapsed": elapsed,
+            "output": output,
+            "runEnv": run_env,
+            "runUserNickname": run_user_nickname
+        }
+        try:
+            instance = PlanResult.objects.get(case_id=case_id, run_user_nickname=run_user_nickname)
+            serializer = PlanResultSerializer(data=data, instance=instance)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ObjectDoesNotExist:
+            serializer = PlanResultSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
 
 @api_view(['POST'])
@@ -224,3 +253,36 @@ def run_case(request, *args, **kwargs):
         args = (pytest_subprocess, cmd, case_id, run_env, run_user_nickname)
         thread_pool.submit(*args).add_done_callback(save_case_result)
         return Response({"msg": "用例运行成功"}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def run_plan(request, *args, **kwargs):
+    plan_id = kwargs["plan_id"]
+    run_env = request.data.get("runEnv")
+    run_user_nickname = request.data.get("runUserNickname")
+    project_id = Plan.objects.get(id=plan_id).project_id
+    request_jwt = request.headers.get("Authorization").replace("Bearer ", "")
+    request_jwt_decoded = jwt.decode(request_jwt, verify=False, algorithms=['HS512'])
+    user_id = request_jwt_decoded["user_id"]
+    p = ProjectPath(project_id, run_env, user_id)
+
+    if not os.path.exists(p.project_temp_dir()):
+        os.chdir(p.projects_root)
+        startproject(p.project_temp_name)
+    clean_fixtures_dir(os.path.join(p.project_temp_dir(), "fixtures"))
+    clean_tests_dir(os.path.join(p.project_temp_dir(), "tests"))
+    pull_tep_files(project_id, p.project_temp_dir(), run_env)
+
+    plan_case_ids = [plan_case.case_id for plan_case in PlanCase.objects.filter(plan_id=plan_id)]
+    case_list = Case.objects.filter(Q(id__in=plan_case_ids))
+    thread_pool = ThreadPoolExecutor()
+    tests_dir = os.path.join(p.project_temp_dir(), "tests")
+    for newest_case in pull_case_files(tests_dir, case_list):
+        case_id, filepath = newest_case
+        delete_plan_result(plan_id, case_id, run_user_nickname)
+        os.chdir(tests_dir)
+        cmd = rf"pytest -s {filepath}"
+        args = (pytest_subprocess, cmd, case_id, run_env, run_user_nickname, plan_id)
+        thread_pool.submit(*args).add_done_callback(save_case_result)
+
+    return Response({"msg": "计划运行成功"}, status=status.HTTP_200_OK)
