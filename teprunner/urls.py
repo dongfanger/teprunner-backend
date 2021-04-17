@@ -61,7 +61,7 @@ urlpatterns = [
         "get": "list",
         "post": "create"
     })),
-    path(r"plans/<int:plan_id>", plan.PlanViewSet.as_view({
+    path(r"plans/<int:pk>", plan.PlanViewSet.as_view({
         "get": "retrieve",
         "put": "update",
         "delete": "destroy"

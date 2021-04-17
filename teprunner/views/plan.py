@@ -38,7 +38,7 @@ class PlanViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        plan_id = kwargs["plan_id"]
+        plan_id = kwargs["pk"]
         plan_case = PlanCase.objects.filter(plan_id=plan_id)
         if plan_case:
             return Response({"msg": "请先删除关联测试用例"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
