@@ -214,7 +214,7 @@ def save_case_result(pytest_result):
             "runUserNickname": run_user_nickname
         }
         try:
-            instance = PlanResult.objects.get(case_id=case_id, run_user_nickname=run_user_nickname)
+            instance = PlanResult.objects.get(plan_id=plan_id, case_id=case_id, run_user_nickname=run_user_nickname)
             serializer = PlanResultSerializer(data=data, instance=instance)
             serializer.is_valid(raise_exception=True)
             serializer.save()
