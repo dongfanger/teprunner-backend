@@ -140,6 +140,10 @@ class CaseResultSerializer(serializers.ModelSerializer):
 class PlanSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
     projectId = serializers.CharField(source="project_id")
+    taskStatus = serializers.CharField(source="task_status")
+    taskCrontab = serializers.CharField(source="task_crontab")
+    taskRunEnv = serializers.CharField(source="task_run_env")
+
     caseNum = serializers.SerializerMethodField(required=False)
     passedNum = serializers.SerializerMethodField(required=False)
     failedNum = serializers.SerializerMethodField(required=False)
@@ -151,8 +155,8 @@ class PlanSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plan
-        fields = ["id", "name", "projectId", "caseNum", "passedNum", "failedNum", "errorNum",
-                  "elapsed", "runEnv", "runUserNickname", "runTime"]
+        fields = ["id", "name", "projectId", "taskStatus", "taskCrontab", "taskRunEnv",
+                  "caseNum", "passedNum", "failedNum", "errorNum", "elapsed", "runEnv", "runUserNickname", "runTime"]
 
     def get_caseNum(self, instance):
         plan_id = instance.id

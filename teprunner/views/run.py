@@ -168,9 +168,9 @@ def delete_case_result(case_id, run_user_nickname):
         pass
 
 
-def delete_plan_result(plan_id, case_id, run_user_nickname):
+def delete_plan_result(plan_id, case_id):
     try:
-        instance = PlanResult.objects.get(plan_id=plan_id, case_id=case_id, run_user_nickname=run_user_nickname)
+        instance = PlanResult.objects.get(plan_id=plan_id, case_id=case_id)
         instance.delete()
     except ObjectDoesNotExist:
         pass
@@ -255,15 +255,7 @@ def run_case(request, *args, **kwargs):
         return Response({"msg": "用例运行成功"}, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
-def run_plan(request, *args, **kwargs):
-    plan_id = kwargs["plan_id"]
-    run_env = request.data.get("runEnv")
-    run_user_nickname = request.data.get("runUserNickname")
-    project_id = Plan.objects.get(id=plan_id).project_id
-    request_jwt = request.headers.get("Authorization").replace("Bearer ", "")
-    request_jwt_decoded = jwt.decode(request_jwt, verify=False, algorithms=['HS512'])
-    user_id = request_jwt_decoded["user_id"]
+def run_plan_engine(project_id, plan_id, run_env, run_user_nickname, user_id):
     p = ProjectPath(project_id, run_env, user_id)
 
     if not os.path.exists(p.project_temp_dir()):
@@ -279,10 +271,22 @@ def run_plan(request, *args, **kwargs):
     tests_dir = os.path.join(p.project_temp_dir(), "tests")
     for newest_case in pull_case_files(tests_dir, case_list):
         case_id, filepath = newest_case
-        delete_plan_result(plan_id, case_id, run_user_nickname)
+        delete_plan_result(plan_id, case_id)
         os.chdir(tests_dir)
         cmd = rf"pytest -s {filepath}"
         args = (pytest_subprocess, cmd, case_id, run_env, run_user_nickname, plan_id)
         thread_pool.submit(*args).add_done_callback(save_case_result)
+
+
+@api_view(['POST'])
+def run_plan(request, *args, **kwargs):
+    plan_id = kwargs["plan_id"]
+    run_env = request.data.get("runEnv")
+    run_user_nickname = request.data.get("runUserNickname")
+    project_id = Plan.objects.get(id=plan_id).project_id
+    request_jwt = request.headers.get("Authorization").replace("Bearer ", "")
+    request_jwt_decoded = jwt.decode(request_jwt, verify=False, algorithms=['HS512'])
+    user_id = request_jwt_decoded["user_id"]
+    run_plan_engine(project_id, plan_id, run_env, run_user_nickname, user_id)
 
     return Response({"msg": "计划运行成功"}, status=status.HTTP_200_OK)
