@@ -185,6 +185,7 @@ def save_case_result(pytest_result):
     output, cmd, case_id, run_env, run_user_nickname, plan_id = pytest_result.result()
     summary = output.split("\n")[-1]
     result, elapsed, = summary.strip("=").strip().split(" in ")
+    elapsed = elapsed.split(" ")[0]
     if not plan_id:
         data = {
             "caseId": case_id,

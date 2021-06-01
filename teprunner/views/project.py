@@ -4,6 +4,7 @@ import shutil
 import zipfile
 
 import jwt
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import StreamingHttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -12,16 +13,84 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from teprunner.models import Project
-from teprunner.serializers import ProjectSerializer
-from teprunner.views.run import ProjectPath, startproject, write_conf_yaml, pull_tep_files, clean_fixtures_dir, \
+from teprunner.serializers import ProjectSerializer, EnvVarSerializer, FixtureSerializer
+from teprunner.views.run import ProjectPath, startproject, pull_tep_files, clean_fixtures_dir, \
     clean_tests_dir
-from user.models import User
 
 
 class ProjectViewSet(ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
     permission_classes = [IsAdminUser]
+
+    def create(self, request, *args, **kwargs):
+        try:
+            Project.objects.get(name=request.data.get("name"))
+            return Response("存在同名项目", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ObjectDoesNotExist:
+            pass
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+
+        env_config = request.data.get("envConfig")
+        env_list = env_config.replace(" ", "").split(",")
+        project_id = Project.objects.get(name=request.data.get("name")).id
+        for env in env_list:
+            data = {
+                "name": "domain",
+                "value": f"https://{env}.com",
+                "desc": "域名",
+                "curProjectId": project_id,
+                "curEnvName": env,
+            }
+            print(data)
+            env_var_serializer = EnvVarSerializer(data=data)
+            env_var_serializer.is_valid()
+            env_var_serializer.save()
+        code = """from tep.client import request
+from tep.fixture import *
+
+
+def _jwt_headers(token):
+    return {"Content-Type": "application/json", "authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="session")
+def login(env_vars):
+    # Code your login
+    logger.info("Administrator login")
+    response = request(
+        "post",
+        url=env_vars.domain + "/api/users/login",
+        headers={"Content-Type": "application/json"},
+        json={
+            "username": "dongfanger",
+            "password": "123",
+        }
+    )
+    assert response.status_code < 400
+    response_token = jmespath.search("token", response.json())
+    super_admin_id = jmespath.search("user.id", response.json())
+
+    class Clazz:
+        token = response_token
+        jwt_headers = _jwt_headers(response_token)
+        admin_id = super_admin_id
+
+    return Clazz"""
+        data = {
+            "name": "fixture_login",
+            "desc": "登录",
+            "code": code,
+            "creatorNickname": "管理员",
+            "curProjectId": project_id
+        }
+        fixture_serializer = FixtureSerializer(data=data)
+        fixture_serializer.is_valid()
+        fixture_serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 @api_view(['GET'])
