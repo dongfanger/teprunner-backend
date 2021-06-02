@@ -73,7 +73,7 @@ class Plan(models.Model):
     project_id = models.IntegerField("项目id", null=False)
     task_status = models.CharField("定时任务开关状态", max_length=1, null=True, blank=True, default="0")
     task_crontab = models.CharField("定时任务crontab表达式", max_length=20, null=True, blank=True, default="")
-    task_run_env = models.CharField("定时任务运行环境", max_length=20, null=False, default="")
+    task_run_env = models.CharField("定时任务运行环境", max_length=20, null=True, blank=True, default="")
 
 
 class PlanCase(models.Model):

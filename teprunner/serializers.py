@@ -141,8 +141,8 @@ class PlanSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
     projectId = serializers.CharField(source="project_id")
     taskStatus = serializers.CharField(source="task_status")
-    taskCrontab = serializers.CharField(source="task_crontab")
-    taskRunEnv = serializers.CharField(source="task_run_env")
+    taskCrontab = serializers.CharField(source="task_crontab", required=False, allow_blank=True)
+    taskRunEnv = serializers.CharField(source="task_run_env", required=False, allow_blank=True)
 
     caseNum = serializers.SerializerMethodField(required=False)
     passedNum = serializers.SerializerMethodField(required=False)
