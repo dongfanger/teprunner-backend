@@ -13,7 +13,6 @@ from apscheduler.triggers.cron import CronTrigger
 from django.db import connections
 from django_apscheduler.jobstores import DjangoJobStore
 from django_apscheduler.models import DjangoJobExecution
-from loguru import logger
 
 from teprunnerbackend import settings
 
@@ -34,9 +33,6 @@ scheduler.add_job(
     id="delete_old_job_executions",
     max_instances=1,
     replace_existing=True,
-)
-logger.info(
-    "Added weekly job: 'delete_old_job_executions'."
 )
 
 
@@ -60,9 +56,7 @@ def close_old_connections():
 close_old_connections()
 
 try:
-    logger.info("Starting scheduler...")
     scheduler.start()
-except KeyboardInterrupt:
-    logger.info("Stopping scheduler...")
-    scheduler.shutdown()
-    logger.info("Scheduler shut down successfully!")
+except:
+    pass
+
