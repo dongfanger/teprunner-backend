@@ -15,10 +15,16 @@ from teprunner.models import Project, EnvVar, Fixture, Case, CaseResult, Plan, P
 class ProjectSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
     envConfig = serializers.CharField(source="env_config")
+    gitRepository = serializers.CharField(source="git_repository", required=False, allow_blank=True)
+    gitBranch = serializers.CharField(source="git_branch", required=False, allow_blank=True)
+    lastSyncTime = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Project
-        fields = ["id", "name", "envConfig"]
+        fields = ["id", "name", "envConfig", "gitRepository", "gitBranch", "lastSyncTime"]
+
+    def get_lastSyncTime(self, instance):
+        return instance.last_sync_time.strftime("%Y-%m-%d %H:%M:%S") if instance.last_sync_time else ""
 
 
 class EnvVarSerializer(serializers.ModelSerializer):
@@ -45,10 +51,12 @@ class CaseSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
     creatorNickname = serializers.CharField(source="creator_nickname")
     projectId = serializers.CharField(source="project_id")
+    filename = serializers.CharField(required=False)
+    source = serializers.CharField(required=False)
 
     class Meta:
         model = Case
-        fields = ["id", "desc", "code", "creatorNickname", "projectId"]
+        fields = ["id", "desc", "code", "creatorNickname", "projectId", "filename", "source"]
 
 
 class CaseListSerializer(serializers.ModelSerializer):
@@ -65,7 +73,7 @@ class CaseListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Case
         fields = ["id", "desc", "code", "creatorNickname", "projectId",
-                  "result", "elapsed", "runEnv", "runUserNickname", "runTime"]
+                  "result", "elapsed", "runEnv", "runUserNickname", "runTime", "source"]
 
     def get_result(self, instance):
         case_id = instance.id

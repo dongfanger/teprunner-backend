@@ -17,6 +17,9 @@ class Project(BaseTable):
 
     name = models.CharField("项目名称", unique=True, max_length=100, null=False)
     env_config = models.CharField("环境配置", max_length=100, null=False)
+    git_repository = models.CharField("Git仓库", max_length=100, null=True, blank=True)
+    git_branch = models.CharField("Git分支", max_length=100, null=True, blank=True)
+    last_sync_time = models.DateTimeField("运行时间", null=True, blank=True)
 
 
 class EnvVar(BaseTable):
@@ -50,6 +53,8 @@ class Case(BaseTable):
     code = models.TextField("代码", max_length=30000, null=False)
     creator_nickname = models.CharField("创建人昵称", null=False, max_length=64)
     project_id = models.IntegerField("项目id", null=False)
+    filename = models.CharField("文件名", max_length=200, null=False, default="")
+    source = models.CharField("用例来源", max_length=10, null=False, default="platform")
 
 
 class CaseResult(BaseTable):

@@ -22,6 +22,7 @@ urlpatterns = [
         "delete": "destroy"
     })),
     path(r"projects/env", project.project_env),
+    path(r"projects/<int:pk>/gitSync", project.git_sync),
 
     path(r"envvars", envvar.EnvVarViewSet.as_view({
         "get": "list",
