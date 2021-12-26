@@ -1,5 +1,7 @@
 # teprunner-backend
 
+视频教程：https://space.bilibili.com/396344573/channel/series
+
 ## 下载源码
 
 方式①：
