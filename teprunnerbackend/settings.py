@@ -24,8 +24,6 @@ SECRET_KEY = '&_*8f-)+lcs2=0mm+b9*=_91wt9i^li7p%h0$2zzw%453q4!1_'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -35,7 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',
+    'corsheaders',  # 跨域访问
     'user.apps.UserConfig',
     'teprunner.apps.TeprunnerConfig',
     'channels',
@@ -50,7 +48,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # 跨域访问
 ]
 
 ROOT_URLCONF = 'teprunnerbackend.urls'
@@ -138,9 +136,15 @@ JWT_AUTH = {
     "JWT_AUTH_HEADER_PREFIX": "Bearer"
 }
 
+# ---------------- 跨域访问配置开始---------------------
+
+ALLOWED_HOSTS = ["*"]
+
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = ()
+
+# ---------------- 跨域访问配置结束---------------------
 
 ASGI_APPLICATION = 'teprunnerbackend.asgi.application'
 
