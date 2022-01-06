@@ -1,6 +1,6 @@
 # teprunner-backend
 
-视频教程：https://space.bilibili.com/396344573/channel/series
+B站：[teprunner测试平台视频教程全集](https://www.bilibili.com/video/BV1Kr4y1v7br/)
 
 ## 下载源码
 
