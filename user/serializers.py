@@ -13,13 +13,17 @@ from user.models import User, Role, UserRole
 
 
 class UserLoginSerializer(serializers.ModelSerializer):
+    # 定义登录的返回字段
+    # 固定写法，表示是通过自定义方法取值
     roleName = serializers.SerializerMethodField()
 
     class Meta:
         model = User
+        # 从表中直接取值
         fields = ['username', 'nickname', 'roleName']
 
     def get_roleName(self, instance):
+        # instance就是class Meta里面指定的model
         user_id = instance.id
         role_ids = [obj.role_id for obj in UserRole.objects.filter(user_id=user_id)]
         query_set = [Role.objects.get(id=role_id) for role_id in role_ids]

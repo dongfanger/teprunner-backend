@@ -15,15 +15,17 @@ from user.serializers import UserLoginSerializer
 
 
 def jwt_response_payload_handler(token, user=None, request=None):
-    role_id = UserRole.objects.get(user_id=user.id).role_id
+    # 自定义响应体
+    role_id = UserRole.objects.get(user_id=user.id).role_id  # 获取角色id
     return {
         "token": token,
         "user": UserLoginSerializer(user).data,
-        "auth": RoleAuthSerializer(Role.objects.get(id=role_id)).data["auth"]
+        "auth": RoleAuthSerializer(Role.objects.get(id=role_id)).data["auth"]  # 根据角色id获取菜单
     }
 
 
 def custom_exception_handler(exc, context):
+    # 根据异常自定义响应体和状态码
     if hasattr(exc, "detail"):
         if exc.detail == "缺失JWT请求头":
             response = exception_handler(exc, context)

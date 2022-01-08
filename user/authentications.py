@@ -21,6 +21,7 @@ class CustomJSONWebTokenAuthentication(BaseJSONWebTokenAuthentication):
         if not authorization_header:
             raise exceptions.AuthenticationFailed('缺失JWT请求头')
 
+        # --------------- 复用代码开始 -----------------
         jwt_value = JSONWebTokenAuthentication().get_jwt_value(request)
         if jwt_value is None:
             return None
@@ -36,3 +37,4 @@ class CustomJSONWebTokenAuthentication(BaseJSONWebTokenAuthentication):
 
         user = self.authenticate_credentials(payload)
         return user, jwt_value
+        # --------------- 复用代码结束 -----------------

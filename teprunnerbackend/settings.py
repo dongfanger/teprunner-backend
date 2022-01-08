@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',  # 跨域访问
-    'user.apps.UserConfig',
+    'user.apps.UserConfig',  # 用户模块
     'teprunner.apps.TeprunnerConfig',
     'channels',
     'django_apscheduler',
@@ -102,6 +102,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
+# ---------------- 时区配置开始 ---------------------
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Asia/Shanghai'
@@ -112,10 +114,14 @@ USE_L10N = True
 
 USE_TZ = True
 
+# ---------------- 时区配置结束 ---------------------
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# ---------------- 用户认证鉴权配置开始 ---------------------
 
 AUTH_USER_MODEL = 'user.User'
 
@@ -136,7 +142,9 @@ JWT_AUTH = {
     "JWT_AUTH_HEADER_PREFIX": "Bearer"
 }
 
-# ---------------- 跨域访问配置开始---------------------
+# ---------------- 用户认证鉴权配置开始 ---------------------
+
+# ---------------- 跨域访问配置开始 ---------------------
 
 ALLOWED_HOSTS = ["*"]
 
@@ -144,7 +152,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = ()
 
-# ---------------- 跨域访问配置结束---------------------
+# ---------------- 跨域访问配置结束 ---------------------
 
 ASGI_APPLICATION = 'teprunnerbackend.asgi.application'
 

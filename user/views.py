@@ -22,18 +22,22 @@ from user.serializers import UserPagingSerializer, RolePagingSerializer, UserCre
 
 
 class UserLogin(JSONWebTokenAPIView):
+    # 固定写法
     serializer_class = JSONWebTokenSerializer
 
     def post(self, request, *args, **kwargs):
         username = request.data.get("username")
         password = request.data.get("password")
         try:
+            # 数据库加密后的密码
             db_password_hash = User.objects.get(username=username).password
         except User.DoesNotExist:
             return Response(ErrUserNotFound, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # 验证明文密码跟加密后的密码是否匹配
         if not check_password(password, db_password_hash):
             return Response(ErrInvalidPassword, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        # ----------------- 复用代码开始 -----------------
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -51,6 +55,7 @@ class UserLogin(JSONWebTokenAPIView):
             return response
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # ----------------- 复用代码结束 -----------------
 
 
 class UserViewSet(GenericViewSet):
