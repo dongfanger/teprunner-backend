@@ -6,8 +6,9 @@ from django.db import models
 
 
 class BaseTable(models.Model):
+    # 基础表 统一添加创建时间和更新时间字段
     class Meta:
-        abstract = True
+        abstract = True  # 不会创建表
         db_table = 'BaseTable'
 
     created_at = models.DateTimeField('创建时间', auto_now_add=True)
@@ -15,14 +16,16 @@ class BaseTable(models.Model):
 
 
 class User(AbstractUser):
+    # 用户表
     class Meta:
         db_table = "user"
 
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = []  # 让Django默认必填的邮箱变成非必填
     nickname = models.CharField("昵称", null=False, max_length=64, default="")
 
 
 class Role(BaseTable):
+    # 角色表
     class Meta:
         db_table = "role"
 
@@ -31,6 +34,7 @@ class Role(BaseTable):
 
 
 class UserRole(BaseTable):
+    # 用户角色关系表
     class Meta:
         db_table = "user_role"
 
