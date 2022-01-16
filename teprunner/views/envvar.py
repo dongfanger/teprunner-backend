@@ -22,6 +22,8 @@ class EnvVarViewSet(ModelViewSet):
         project_id = request.GET.get("curProjectId")
         env_name = request.GET.get("curEnvName")
         queryset = EnvVar.objects.filter(Q(project_id=project_id) & Q(env_name=env_name))
+
+        # ------------------复用代码开始--------------------
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -29,3 +31,4 @@ class EnvVarViewSet(ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+        # ------------------复用代码结束--------------------

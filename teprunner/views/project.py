@@ -26,16 +26,21 @@ class ProjectViewSet(ModelViewSet):
     permission_classes = [IsAdminUser]
 
     def create(self, request, *args, **kwargs):
+        # 重写create方法
         try:
             Project.objects.get(name=request.data.get("name"))
             return Response("存在同名项目", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        except ObjectDoesNotExist:
+        except ObjectDoesNotExist:  # 如果不存在会抛异常
             pass
+        
+        # ------------复用现成代码开始----------------
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
+        # ------------复用现成代码结束----------------
 
+        # ------------初始化环境变量开始--------------
         env_config = request.data.get("envConfig")
         env_list = env_config.replace(" ", "").split(",")
         project_id = Project.objects.get(name=request.data.get("name")).id
@@ -51,6 +56,9 @@ class ProjectViewSet(ModelViewSet):
             env_var_serializer = EnvVarSerializer(data=data)
             env_var_serializer.is_valid()
             env_var_serializer.save()
+        # ------------初始化环境变量结束--------------
+
+        # ------------初始化fixture开始--------------
         code = """from tep.client import request
 from tep.fixture import *
 
@@ -92,6 +100,8 @@ def login(env_vars):
         fixture_serializer = FixtureSerializer(data=data)
         fixture_serializer.is_valid()
         fixture_serializer.save()
+        # ------------初始化fixture开始--------------
+
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 

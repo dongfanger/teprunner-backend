@@ -22,6 +22,8 @@ class FixtureViewSet(ModelViewSet):
     def list(self, request, *args, **kwargs):
         project_id = request.GET.get("curProjectId")
         queryset = Fixture.objects.filter(Q(project_id=project_id))
+
+        # ------------------复用代码开始--------------------
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -29,12 +31,16 @@ class FixtureViewSet(ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+        # ------------------复用代码结束--------------------
 
     def update(self, request, *args, **kwargs):
         fixture_id = kwargs["pk"]
+        # 知道谁更新了fixture
+        request.data["creatorNickname"] = Fixture.objects.get(id=fixture_id).creator_nickname
+
+    # ------------------复用代码开始--------------------
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        request.data["creatorNickname"] = Fixture.objects.get(id=fixture_id).creator_nickname
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -52,3 +58,4 @@ class FixtureViewSet(ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
+    # ------------------复用代码--------------------

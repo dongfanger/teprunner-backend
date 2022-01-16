@@ -27,30 +27,30 @@ class CaseViewSet(ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         project_id = request.GET.get("projectId")
-        query = Q(project_id=project_id)
+        query = Q(project_id=project_id)  # Q查询条件
         case_id = request.GET.get("id")
-        if case_id:
+        if case_id:  # 如果传了用例id
             query &= Q(id=case_id)
         desc = request.GET.get("desc")
-        if desc:
+        if desc:  # 如果传了用例描述
             query &= Q(desc__icontains=desc)
         api = request.GET.get("api")
-        if api:
+        if api:  # 如果传了接口路径
             query &= Q(code__icontains=api)
         exclude_plan_id = request.GET.get("excludePlanId")
-        if exclude_plan_id:
+        if exclude_plan_id:  # 测试计划添加用例时，排除已经添加到当前计划的用例
             plan_case_ids = [plan_case.case_id for plan_case in PlanCase.objects.filter(plan_id=exclude_plan_id)]
             query &= ~Q(id__in=plan_case_ids)
         keyword = request.GET.get("keyword")
-        if keyword:
+        if keyword:  # 如果传了关键字
             try:
                 int(keyword)
-                case_id_query = Q(id=keyword)
-            except ValueError:
+                case_id_query = Q(id=keyword)  # 关键字既可以是用例id
+            except ValueError:  # 对数字以外字符做异常处理
                 case_id_query = Q()
-            case_desc_query = Q(desc__icontains=keyword)
+            case_desc_query = Q(desc__icontains=keyword)  # 关键字也可以是用例描述
             query &= (case_id_query | case_desc_query)
-        queryset = Case.objects.filter(query).order_by('-id')
+        queryset = Case.objects.filter(query).order_by('-id')  # 按照用例id倒序
         cp = CustomPagination()
         page = cp.paginate_queryset(queryset, request=request)
         if page is not None:
@@ -59,9 +59,11 @@ class CaseViewSet(ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         case_id = kwargs["pk"]
+        # 知道谁修改了用例
+        request.data["creatorNickname"] = Case.objects.get(id=case_id).creator_nickname
+        # ------------------复用代码--------------------
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        request.data["creatorNickname"] = Case.objects.get(id=case_id).creator_nickname
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -79,6 +81,7 @@ class CaseViewSet(ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
+    # ------------------复用代码--------------------
 
 
 class CaseResultView(JsonWebsocketConsumer):

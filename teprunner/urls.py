@@ -12,6 +12,7 @@ from django.urls import path
 from teprunner.views import project, envvar, fixture, case, run, plan
 
 urlpatterns = [
+    # ------------------项目增删改查开始------------------
     path(r"projects", project.ProjectViewSet.as_view({
         "get": "list",
         "post": "create"
@@ -21,9 +22,13 @@ urlpatterns = [
         "put": "update",
         "delete": "destroy"
     })),
-    path(r"projects/env", project.project_env),
-    path(r"projects/<int:pk>/gitSync", project.git_sync),
+    # ------------------项目增删改查结束------------------
 
+    path(r"projects/env", project.project_env),  # 项目环境下拉框选项
+    path(r"projects/<int:pk>/gitSync", project.git_sync),
+    path(r"projects/<int:pk>/export", project.export_project),
+
+    # ------------------环境变量增删改查开始------------------
     path(r"envvars", envvar.EnvVarViewSet.as_view({
         "get": "list",
         "post": "create"
@@ -33,7 +38,9 @@ urlpatterns = [
         "put": "update",
         "delete": "destroy"
     })),
+    # ------------------环境变量增删改查结束------------------
 
+    # ------------------fixture增删改查开始------------------
     path(r"fixtures", fixture.FixtureViewSet.as_view({
         "get": "list",
         "post": "create"
@@ -43,7 +50,9 @@ urlpatterns = [
         "put": "update",
         "delete": "destroy"
     })),
+    # ------------------fixture增删改查结束------------------
 
+    # ------------------用例增删改查开始------------------
     path(r"cases", case.CaseViewSet.as_view({
         "get": "list",
         "post": "create"
@@ -53,10 +62,9 @@ urlpatterns = [
         "put": "update",
         "delete": "destroy"
     })),
-    path(r"cases/<int:pk>/copy", case.copy_case),
-
-    path(r"cases/<int:pk>/run", run.run_case),
-    path(r"projects/<int:pk>/export", project.export_project),
+    # ------------------用例增删改查开始------------------
+    path(r"cases/<int:pk>/copy", case.copy_case),  # 复制用例
+    path(r"cases/<int:pk>/run", run.run_case),  # 运行用例
 
     path(r"plans", plan.PlanViewSet.as_view({
         "get": "list",
@@ -67,7 +75,6 @@ urlpatterns = [
         "put": "update",
         "delete": "destroy"
     })),
-
     path(r"plans/<int:plan_id>/cases", plan.PlanCaseView.as_view({
         "get": "list",
         "post": "add",
@@ -75,7 +82,6 @@ urlpatterns = [
     path(r"plans/<int:plan_id>/cases/<int:case_id>", plan.PlanCaseView.as_view({
         "delete": "remove"
     })),
-
     path(r"plans/<int:plan_id>/run", run.run_plan),
     path(r"plans/<int:plan_id>/result", plan.result),
     path(r"plans/<int:plan_id>/cases/<int:case_id>/result", plan.case_result),
