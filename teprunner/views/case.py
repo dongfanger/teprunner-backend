@@ -85,12 +85,18 @@ class CaseViewSet(ModelViewSet):
 
 
 class CaseResultView(JsonWebsocketConsumer):
+    # 继承channels.generic.websocket.JsonWebsocketConsumer
+    # 可以接受和发送JSON的WebSocket消费者
+
     group_name = None
     case_id = None
 
     def connect(self):
+        # 建立连接 从url中拿到case_id
         self.case_id = self.scope['url_route']['kwargs']['case_id']
+        # 把case_id作为房间名
         self.group_name = str(self.case_id)
+        # 在channel_layer中创建房间
         self.channel_layer.group_add(
             self.group_name,
             self.channel_name
@@ -98,21 +104,25 @@ class CaseResultView(JsonWebsocketConsumer):
         self.accept()
 
     def disconnect(self, close_code):
+        # 断开连接时，把房间从channel_layer中移除
         self.channel_layer.group_discard(
             self.group_name,
             self.channel_name
         )
 
     def receive_json(self, content, **kwargs):
+        # 在后端收到前端请求时调用 服务端会给客户端发4次消息
         case = Case.objects.get(id=self.case_id)
         res = {"desc": case.desc, "creatorNickname": case.creator_nickname,
                "result": "", "elapsed": "", "output": "",
                "runEnv": "", "runUserNickname": "", "runTime": ""}
+        # 第1次，返回用例描述和用例创建人
         self.send_json(res)
         timeout = 60
         count = 1
         while count <= timeout:
             res["output"] = f"用例结果查询中{count}s"
+            # 第2次，返回计时器
             self.send_json(res)
             try:
                 instances = CaseResult.objects.filter(case_id=self.case_id).order_by('-run_time')
@@ -123,6 +133,7 @@ class CaseResultView(JsonWebsocketConsumer):
                 res["runEnv"] = serializer.data.get("runEnv")
                 res["runUserNickname"] = serializer.data.get("runUserNickname")
                 res["runTime"] = serializer.data.get("runTime")
+                # 第3次，返回用例结果
                 self.send_json(res)
                 break
             except (ObjectDoesNotExist, IndexError):
@@ -130,6 +141,7 @@ class CaseResultView(JsonWebsocketConsumer):
                 time.sleep(1)
         if count > timeout:
             res["output"] = f"查询时间超过{timeout}s"
+            # 第4次，60s后还没有结果，返回超时
             self.send_json(res)
         self.close()
 

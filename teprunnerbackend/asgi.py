@@ -19,7 +19,9 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'teprunnerbackend.settings')
 
 # application = get_asgi_application()
 
-
+# 自定义application
+# http就走默认的get_asgi_application
+# websocket走新增的websocket_urlpatterns
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
     'websocket': AuthMiddlewareStack(
