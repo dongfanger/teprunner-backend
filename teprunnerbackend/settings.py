@@ -172,3 +172,9 @@ CHANNEL_LAYERS = {
     }
 }
 # ---------------- websocket配置结束 ---------------------
+
+MENU_AUTH = {
+    "管理员": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": True}],
+    "测试": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": False}],
+    "开发": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": False}]
+}

@@ -8,9 +8,9 @@
 """
 from rest_framework import status
 from rest_framework.views import exception_handler
+from teprunnerbackend.settings import MENU_AUTH
 
 from user.models import Role, UserRole
-from user.serializers import RoleAuthSerializer
 from user.serializers import UserLoginSerializer
 
 
@@ -20,7 +20,7 @@ def jwt_response_payload_handler(token, user=None, request=None):
     return {
         "token": token,
         "user": UserLoginSerializer(user).data,
-        "auth": RoleAuthSerializer(Role.objects.get(id=role_id)).data["auth"]  # 根据角色id获取菜单
+        "auth": MENU_AUTH[Role.objects.get(id=role_id).name]  # 根据角色获取菜单
     }
 
 

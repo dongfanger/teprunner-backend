@@ -51,12 +51,6 @@ class UserPagingSerializer(serializers.ModelSerializer):
         return [{"id": obj.id, "name": obj.name} for obj in query_set]
 
 
-class RoleAuthSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Role
-        fields = ['auth']
-
-
 class RolePagingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role

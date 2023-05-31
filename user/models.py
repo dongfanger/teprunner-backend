@@ -30,8 +30,6 @@ class Role(BaseTable):
         db_table = "role"
 
     name = models.CharField("角色名", null=False, max_length=64, default="")
-    auth = models.JSONField("菜单权限JSON", default=None)
-
 
 class UserRole(BaseTable):
     # 用户角色关系表
