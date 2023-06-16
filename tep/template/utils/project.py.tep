@@ -1,0 +1,10 @@
+import os
+
+
+class Project:
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(root_dir, "data")
+
+
+if __name__ == '__main__':
+    print(Project.root_dir)

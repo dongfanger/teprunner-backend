@@ -19,6 +19,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from tep.scaffold import create_scaffold
 from teprunner.models import Fixture, EnvVar, Case, CaseResult, Project, Plan, PlanCase, PlanResult
 from teprunner.serializers import CaseResultSerializer, PlanResultSerializer
 
@@ -62,8 +63,7 @@ class ProjectPath:
 
 
 def startproject(project_name):
-    # 调用命令 tep startproject project_name
-    subprocess.call(f"tep startproject {project_name}", shell=True)
+    create_scaffold(project_name)
 
 
 def env_vars_code(mapping, definition):
@@ -127,7 +127,7 @@ def write_case_file(tests_dir, case_id, code):
 
 def write_conf_yaml(project_dir, env_name):
     # conf.yaml
-    filepath = os.path.join(project_dir, "conf.yaml")
+    filepath = os.path.join(project_dir, "resources", "tep.yaml")
     f = open(filepath, "r", encoding="utf-8")
     conf = yaml.load(f.read(), Loader=yaml.FullLoader)
     f.close()
@@ -200,8 +200,12 @@ def save_case_result(pytest_result):
     # 保存用例结果
     output, cmd, case_id, run_env, run_user_nickname, plan_id = pytest_result.result()
     summary = output.split("\n")[-1]
-    result, elapsed, = summary.strip("=").strip().split(" in ")
-    elapsed = elapsed.split(" ")[0]
+    elapsed = 0
+    try:
+        result, elapsed, = summary.strip("=").strip().split(" in ")
+        elapsed = elapsed.split(" ")[0]
+    except:
+        result = "执行失败"
     if not plan_id:  # 运行用例
         data = {
             "caseId": case_id,

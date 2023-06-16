@@ -1,0 +1,20 @@
+"查询SKU": {
+  "skuName": "电子书"
+}
+
+"添加购物车": {
+  "skuId": 123,
+  "skuNum": 2
+}
+
+"下单": {
+  "orderId": 222,
+  "payAmount": "0.2"
+}
+
+"支付": {
+  "skuId": 123,
+  "price": 0.1,
+  "skuNum": 2,
+  "totalPrice": 0.2
+}

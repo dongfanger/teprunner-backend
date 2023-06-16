@@ -1,0 +1,9 @@
+domain: "http://127.0.0.1:5000"
+env: "test"
+db:
+  mysql:
+    host: "host"
+    port: "port"
+    user: "user"
+    password: "password"
+    db: "db"
