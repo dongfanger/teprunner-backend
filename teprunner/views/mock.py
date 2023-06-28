@@ -3,11 +3,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 
-@api_view(['POST'])
-def login(request, *args, **kwargs):
-    return Response({"token": "de2e3ffu29"}, status=status.HTTP_200_OK)
-
-
 @api_view(['GET'])
 def search_sku(request, *args, **kwargs):
     return Response({"skuId": "222", "price": "2.3"}, status=status.HTTP_200_OK)

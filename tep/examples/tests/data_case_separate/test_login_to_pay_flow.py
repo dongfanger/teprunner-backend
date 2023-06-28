@@ -11,8 +11,8 @@ from utils.step import Step
 
 
 @allure.title("从登录到下单支付")
-def test(login, env_vars, case_vars):
-    case_vars.put("token", login["token"])
+def test(login_headers, env_vars, case_vars):
+    case_vars.put("headers", login_headers)
     cache = TepCache(env_vars=env_vars, case_vars=case_vars)
 
     Step("搜索商品", step_search_sku, cache)
@@ -23,7 +23,7 @@ def test(login, env_vars, case_vars):
 
 def step_search_sku(cache: TepCache):
     url = cache.env_vars["domain"] + cache.env_vars["mockApi"] + "/searchSku"
-    headers = {"token": cache.case_vars.get("token")}
+    headers = cache.case_vars.get("headers")
     body = data("查询SKU")
 
     response = request("get", url=url, headers=headers, params=body)
@@ -35,7 +35,7 @@ def step_search_sku(cache: TepCache):
 
 def step_add_cart(cache: TepCache):
     url = cache.env_vars["domain"] + cache.env_vars["mockApi"] + "/addCart"
-    headers = {"token": cache.case_vars.get("token")}
+    headers = cache.case_vars.get("headers")
     body = data("添加购物车")
     body["skuId"] = cache.case_vars.get("skuId")
 
@@ -48,7 +48,7 @@ def step_add_cart(cache: TepCache):
 
 def step_order(cache: TepCache):
     url = cache.env_vars["domain"] + cache.env_vars["mockApi"] + "/order"
-    headers = {"token": cache.case_vars.get("token")}
+    headers = cache.case_vars.get("headers")
     body = data("下单")
     body["skuId"] = cache.case_vars.get("skuId")
     body["price"] = cache.case_vars.get("skuPrice")
@@ -63,7 +63,7 @@ def step_order(cache: TepCache):
 
 def step_pay(cache: TepCache):
     url = cache.env_vars["domain"] + cache.env_vars["mockApi"] + "/pay"
-    headers = {"token": cache.case_vars.get("token")}
+    headers = cache.case_vars.get("headers")
     body = data("支付")
     body["orderId"] = cache.case_vars.get("orderId")
 

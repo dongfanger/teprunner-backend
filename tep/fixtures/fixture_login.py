@@ -15,12 +15,17 @@ def login(tep_context_manager, env_vars):
         logger.info("----------------开始登录----------------")
         response = request(
             "post",
-            url=variable["domain"] + variable["mockApi"] + "/login",
+            url=variable["domain"] + "/api/users/login",
             headers={"Content-Type": "application/json"},
-            json={"username": "dongfanger", "password": "123456"}
+            json={"username": "admin", "password": "qa123456"}
         )
         assert response.status_code < 400
         logger.info("----------------登录成功----------------")
         return response.json()
 
     return tep_context_manager(produce_expensive_data, env_vars)
+
+
+@pytest.fixture(scope="session")
+def login_headers(login):
+    return {"Authorization": "Bearer " + login["token"]}

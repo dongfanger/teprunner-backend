@@ -8,12 +8,12 @@ from utils.http_client import request
 
 
 @allure.title("登录--搜索商品--添加购物车--下单--支付")
-def test(env_vars, login):
+def test(env_vars, login_headers):
     # 搜索商品
     response = request(
         "get",
         url=env_vars["domain"] + env_vars["mockApi"] + "/searchSku",
-        headers={"token": login["token"]},
+        headers=login_headers,
         params={"skuName": "电子书"}
     )
     sku_id = response.jsonpath("$.skuId")
@@ -25,7 +25,7 @@ def test(env_vars, login):
     response = request(
         "post",
         url=env_vars["domain"] + env_vars["mockApi"] + "/addCart",
-        headers={"token": login["token"]},
+        headers=login_headers,
         json={"skuId": sku_id, "skuNum": str(sku_num)}
     )
     total_price = response.jsonpath("$.totalPrice")
@@ -35,7 +35,7 @@ def test(env_vars, login):
     response = request(
         "post",
         url=env_vars["domain"] + env_vars["mockApi"] + "/order",
-        headers={"token": login["token"]},
+        headers=login_headers,
         json={"skuId": sku_id, "price": sku_price, "skuNum": str(sku_num), "totalPrice": total_price}
     )
     order_id = response.jsonpath("$.orderId")
@@ -45,7 +45,7 @@ def test(env_vars, login):
     response = request(
         "post",
         url=env_vars["domain"] + env_vars["mockApi"] + "/pay",
-        headers={"token": login["token"]},
+        headers=login_headers,
         json={"orderId": order_id, "payAmount": "6.9"}
     )
     assert response.status_code < 400

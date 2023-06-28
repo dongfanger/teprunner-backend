@@ -14,7 +14,6 @@ from teprunner.views import project, envvar, fixture, case, run, plan, mock, tep
 urlpatterns = [
     path(r"scaffold", tep_scaffold.create),  # 项目脚手架
 
-    path(r"mock/login", mock.login),
     path(r"mock/searchSku", mock.search_sku),
     path(r"mock/addCart", mock.add_cart),
     path(r"mock/order", mock.order),
