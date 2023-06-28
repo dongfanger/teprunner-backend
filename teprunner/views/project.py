@@ -54,8 +54,8 @@ class ProjectViewSet(ModelViewSet):
             }
             print(data)
             env_var_serializer = EnvVarSerializer(data=data)
-            env_var_serializer.is_valid()
-            env_var_serializer.save()
+            # env_var_serializer.is_valid()
+            # env_var_serializer.save()
         # ------------初始化环境变量结束--------------
 
         # ------------初始化fixture开始--------------
@@ -98,8 +98,8 @@ def login(env_vars):
             "curProjectId": project_id
         }
         fixture_serializer = FixtureSerializer(data=data)
-        fixture_serializer.is_valid()
-        fixture_serializer.save()
+        # fixture_serializer.is_valid()
+        # fixture_serializer.save()
         # ------------初始化fixture开始--------------
 
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -235,7 +235,7 @@ def sync_case():
         for file in files:
             if os.path.isfile(os.path.join(root, file)):
                 if (file.startswith("test_") or file.endswith("_test")) and file.endswith(".py"):
-                    filename = os.path.join(root, file).replace(GitSyncConfig.tests_dir, "").strip("\\")
+                    filename = os.path.join(root, file).replace(GitSyncConfig.tests_dir, "").strip(os.sep)
                     git_filenames.append(filename)
     git_filenames = set(git_filenames)
 

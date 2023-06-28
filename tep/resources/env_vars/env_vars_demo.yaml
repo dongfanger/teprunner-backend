@@ -1,0 +1,14 @@
+domain: "http://127.0.0.1:8000"
+mockApi: "/api/teprunner/mock"
+env: "demo"
+db:
+  mysql:
+    host: "localhost"
+    port: "3306"
+    user: "root"
+    password: "123456"
+    db: "sys"
+login:
+  uri: "/login"
+  headers: {"Content-Type": "application/json"}
+  body: {"username": "dongfanger", "password": "123456"}

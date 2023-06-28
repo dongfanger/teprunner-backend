@@ -9,9 +9,17 @@
 
 from django.urls import path
 
-from teprunner.views import project, envvar, fixture, case, run, plan
+from teprunner.views import project, envvar, fixture, case, run, plan, mock, tep_scaffold
 
 urlpatterns = [
+    path(r"scaffold", tep_scaffold.create),  # 项目脚手架
+
+    path(r"mock/login", mock.login),
+    path(r"mock/searchSku", mock.search_sku),
+    path(r"mock/addCart", mock.add_cart),
+    path(r"mock/order", mock.order),
+    path(r"mock/pay", mock.pay),
+
     # ------------------项目增删改查开始------------------
     path(r"projects", project.ProjectViewSet.as_view({
         "get": "list",

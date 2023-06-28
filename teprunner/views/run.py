@@ -19,7 +19,6 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from tep.scaffold import create_scaffold
 from teprunner.models import Fixture, EnvVar, Case, CaseResult, Project, Plan, PlanCase, PlanResult
 from teprunner.serializers import CaseResultSerializer, PlanResultSerializer
 
@@ -63,7 +62,8 @@ class ProjectPath:
 
 
 def startproject(project_name):
-    create_scaffold(project_name)
+    # create_scaffold(project_name)
+    pass
 
 
 def env_vars_code(mapping, definition):
