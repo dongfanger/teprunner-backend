@@ -50,11 +50,10 @@ class Case(BaseTable):
         db_table = "case"
 
     desc = models.CharField("用例描述", max_length=500, null=False)
-    code = models.TextField("代码", max_length=30000, null=False)
     creator_nickname = models.CharField("创建人昵称", null=False, max_length=64)
     project_id = models.IntegerField("项目id", null=False)
     filename = models.CharField("文件名", max_length=200, null=False, default="")
-    source = models.CharField("用例来源", max_length=10, null=False, default="platform")
+    filepath = models.CharField("文件路径", max_length=500, null=False, default="")
 
 
 class CaseResult(BaseTable):

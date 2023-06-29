@@ -56,7 +56,7 @@ class CaseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Case
-        fields = ["id", "desc", "code", "creatorNickname", "projectId", "filename", "source"]
+        fields = ["id", "desc", "creatorNickname", "projectId", "filename", "filepath"]
 
 
 class CaseListSerializer(serializers.ModelSerializer):
@@ -72,8 +72,8 @@ class CaseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Case
-        fields = ["id", "desc", "code", "creatorNickname", "projectId",
-                  "result", "elapsed", "runEnv", "runUserNickname", "runTime", "source"]
+        fields = ["id", "desc", "creatorNickname", "projectId",
+                  "result", "elapsed", "runEnv", "runUserNickname", "runTime"]
 
     def get_result(self, instance):
         case_id = instance.id

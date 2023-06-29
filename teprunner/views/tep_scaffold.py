@@ -9,66 +9,50 @@
 
 import os
 import shutil
+import zipfile
 
 from django.http import StreamingHttpResponse
-from loguru import logger
 from rest_framework.decorators import api_view
 
-from teprunner.views.project import file_iterator, make_zip
 from teprunnerbackend import settings
 
 
-def create_scaffold(project_name):
-    """ 创建项目脚手架"""
-    if os.path.isdir(project_name):
-        logger.warning(
-            f"Project folder {project_name} exists, please specify a new project name."
-        )
-        return 1
-    elif os.path.isfile(project_name):
-        logger.warning(
-            f"Project name {project_name} conflicts with existed file, please specify a new one."
-        )
-        return 1
+def make_zip(source_dir, zip_filename):
+    zip_ = zipfile.ZipFile(zip_filename, 'w')
+    pre_len = len(os.path.dirname(source_dir))
+    for parent, _, filenames in os.walk(source_dir):
+        for filename in filenames:
+            path = os.path.join(parent, filename)
+            arcname = path[pre_len:].strip(os.path.sep)
+            zip_.write(path, arcname)
+    zip_.close()
 
-    print(f"Create new project: {project_name}")
-    print(f"Project root dir: {os.path.join(os.getcwd(), project_name)}\n")
 
-    def create_folder(path):
-        os.makedirs(path)
-        msg = f"Created folder: {path}"
-        print(msg)
-
-    def create_file(path, file_content=""):
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(file_content)
-        msg = f"Created file:   {path}"
-        print(msg)
-
-    create_folder(project_name)
-    template_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "template")
-    for root, dirs, files in os.walk(template_path):
-        relative_path = root.replace(template_path, "").lstrip("\\").lstrip("/")
-        if dirs:
-            print(relative_path)
-            for dir_ in dirs:
-                create_folder(os.path.join(project_name, relative_path, dir_))
-        if files:
-            for file in files:
-                with open(os.path.join(root, file), encoding="utf-8") as f:
-                    create_file(os.path.join(project_name, relative_path, file[:file.find(".tep")]), f.read())
+def file_iterator(file_path, chunk_size=512):
+    with open(file_path, mode='rb') as f:
+        while True:
+            c = f.read(chunk_size)
+            if c:
+                yield c
+            else:
+                break
 
 
 def copy_folder(source_folder, destination_folder, ignore_folders):
     shutil.copytree(source_folder, destination_folder, ignore=shutil.ignore_patterns(*ignore_folders))
 
 
-@api_view(['POST'])
-def create(request, *args, **kwargs):
+def create_scaffold(project_dir):
     tep_dir = os.path.join(settings.BASE_DIR, "tep")
-    temp_dir = os.path.join(settings.BASE_DIR, "export", "new_project")
-    copy_folder(tep_dir, temp_dir, [".idea", ".pytest_cache", "venv", "__pycache__"])
-    zip_filepath = os.path.join(settings.BASE_DIR, "export", "new_project.zip")
+    copy_folder(tep_dir, project_dir, [".idea", ".pytest_cache", "venv", "__pycache__"])
+
+
+@api_view(['POST'])
+def startproject(request, *args, **kwargs):
+    export_dir = os.path.join(settings.BASE_DIR, "export")
+    temp_dir = os.path.join(export_dir, "new_project")
+    create_scaffold(temp_dir)
+    zip_filepath = os.path.join(export_dir, "new_project.zip")
     make_zip(temp_dir, zip_filepath)
     shutil.rmtree(temp_dir)
 

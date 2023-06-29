@@ -12,7 +12,7 @@ from django.urls import path
 from teprunner.views import project, envvar, fixture, case, run, plan, mock, tep_scaffold
 
 urlpatterns = [
-    path(r"scaffold", tep_scaffold.create),  # 项目脚手架
+    path(r"scaffold", tep_scaffold.startproject),  # 项目脚手架
 
     path(r"mock/searchSku", mock.search_sku),
     path(r"mock/addCart", mock.add_cart),
@@ -33,7 +33,6 @@ urlpatterns = [
 
     path(r"projects/env", project.project_env),  # 项目环境下拉框选项
     path(r"projects/<int:pk>/gitSync", project.git_sync),
-    path(r"projects/<int:pk>/export", project.export_project),
 
     # ------------------环境变量增删改查开始------------------
     path(r"envvars", envvar.EnvVarViewSet.as_view({
