@@ -52,7 +52,7 @@ def startproject(request, *args, **kwargs):
     export_dir = os.path.join(settings.BASE_DIR, "export")
     temp_dir = os.path.join(export_dir, "new_project")
     create_scaffold(temp_dir)
-    zip_filepath = os.path.join(export_dir, "new_project.zip")
+    zip_filepath = os.path.join(export_dir, "newProject.zip")
     make_zip(temp_dir, zip_filepath)
     shutil.rmtree(temp_dir)
 
