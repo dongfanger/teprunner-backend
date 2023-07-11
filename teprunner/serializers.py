@@ -6,10 +6,13 @@
 @Date    :  2020/12/24 14:50
 @Desc    :  
 """
+import os.path
+
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from teprunner.models import Project, EnvVar, Fixture, Case, CaseResult, Plan, PlanCase, PlanResult
+from teprunnerbackend.settings import SANDBOX_PATH
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -52,11 +55,18 @@ class CaseSerializer(serializers.ModelSerializer):
     creatorNickname = serializers.CharField(source="creator_nickname")
     projectId = serializers.CharField(source="project_id")
     filename = serializers.CharField(required=False)
-    source = serializers.CharField(required=False)
+    code = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Case
-        fields = ["id", "desc", "creatorNickname", "projectId", "filename", "filepath"]
+        fields = ["id", "desc", "creatorNickname", "projectId", "filename", "filepath", "code"]
+
+    def get_code(self, instance):
+        filepath = instance.filepath
+        filepath_abs = os.path.join(SANDBOX_PATH, filepath)
+        with open(filepath_abs, encoding="utf8") as f:
+            return f.read()
+
 
 
 class CaseListSerializer(serializers.ModelSerializer):

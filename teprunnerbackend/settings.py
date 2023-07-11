@@ -179,3 +179,5 @@ MENU_AUTH = {
     "测试": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": False}],
     "开发": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": False}]
 }
+
+SANDBOX_PATH = os.path.join(BASE_DIR, "teprunner", "sandbox")

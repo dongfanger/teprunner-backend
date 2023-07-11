@@ -19,7 +19,7 @@ from rest_framework.response import Response
 
 from teprunner.models import Case, CaseResult, PlanResult
 from teprunner.serializers import CaseResultSerializer, PlanResultSerializer
-from teprunnerbackend.settings import BASE_DIR
+from teprunnerbackend.settings import SANDBOX_PATH
 
 
 def fixture_filename(fixture_id):
@@ -31,15 +31,13 @@ def case_filename(case_id):
 
 
 class ProjectPath:
-    sandbox_path = os.path.join(BASE_DIR, "teprunner", "sandbox")
-
     def __init__(self, project_id):
         # 初始化目录文件
-        if not os.path.exists(self.sandbox_path):
-            os.mkdir(self.sandbox_path)
+        if not os.path.exists(SANDBOX_PATH):
+            os.mkdir(SANDBOX_PATH)
 
         self.project_id = project_id
-        self.sandbox_project_path = os.path.join(self.sandbox_path, f"project_{str(project_id)}")  # 项目临时目录名称
+        self.sandbox_project_path = os.path.join(SANDBOX_PATH, f"project_{str(project_id)}")  # 项目临时目录名称
 
 
 def write_conf_yaml(project_dir, env_name):
@@ -151,7 +149,7 @@ def run_case(request, *args, **kwargs):
     p = ProjectPath(project_id)  # 项目目录文件
 
     if not os.path.exists(p.sandbox_project_path):
-        os.chdir(p.sandbox_path)
+        os.chdir(SANDBOX_PATH)
         # todo clone
 
     # todo 激活环境tep.yaml
@@ -165,6 +163,7 @@ def run_case(request, *args, **kwargs):
         args = (pytest_subprocess, cmd, case_id, run_env, run_user_nickname)  # 运行参数
         thread_pool.submit(*args).add_done_callback(save_case_result)  # 多线程调用与回调
         return Response({"msg": "用例运行成功"}, status=status.HTTP_200_OK)
+
 
 def run_plan_engine(project_id, plan_id, run_env, run_user_nickname, user_id):
     p = ProjectPath(project_id, run_env, user_id)
