@@ -9,7 +9,7 @@
 
 from django.urls import path
 
-from teprunner.views import project, envvar, fixture, case, run, plan, mock, tep_scaffold
+from teprunner.views import project, run, task, mock, tep_scaffold
 
 urlpatterns = [
     path(r"scaffold", tep_scaffold.startproject),  # 项目脚手架
@@ -33,39 +33,26 @@ urlpatterns = [
     path(r"projects/<int:pk>/gitSync", project.git_sync),
     # ------------------项目结束------------------
 
-    # ------------------用例开始------------------
-    path(r"cases", case.CaseViewSet.as_view({
-        "get": "list",
-        "post": "create"
-    })),
-    path(r"cases/<int:pk>", case.CaseViewSet.as_view({
-        "get": "retrieve",
-        "put": "update",
-        "delete": "destroy"
-    })),
-    path(r"cases/<int:pk>/copy", case.copy_case),  # 复制用例
-    path(r"cases/<int:pk>/run", run.run_case),  # 运行用例
-    # ------------------用例结束------------------
-
     # ------------------任务开始------------------
-    path(r"plans", plan.PlanViewSet.as_view({
+    path(r"tasks", task.TaskViewSet.as_view({
         "get": "list",
         "post": "create"
     })),
-    path(r"plans/<int:pk>", plan.PlanViewSet.as_view({
+    path(r"tasks/<int:pk>", task.TaskViewSet.as_view({
         "get": "retrieve",
         "put": "update",
         "delete": "destroy"
     })),
-    path(r"plans/<int:plan_id>/cases", plan.PlanCaseView.as_view({
+    path(r"cases", task.cases),
+    path(r"tasks/<int:task_id>/cases", task.TaskCaseView.as_view({
         "get": "list",
         "post": "add",
     })),
-    path(r"plans/<int:plan_id>/cases/<int:case_id>", plan.PlanCaseView.as_view({
+    path(r"tasks/<int:task_id>/cases/<int:case_id>", task.TaskCaseView.as_view({
         "delete": "remove"
     })),
-    path(r"plans/<int:plan_id>/run", run.run_plan),
-    path(r"plans/<int:plan_id>/result", plan.result),
-    path(r"plans/<int:plan_id>/cases/<int:case_id>/result", plan.case_result),
+    path(r"tasks/<int:task_id>/run", run.run_task),
+    path(r"tasks/<int:task_id>/result", task.result),
+    path(r"tasks/<int:task_id>/cases/<int:case_id>/result", task.case_result),
     # ------------------任务结束------------------
 ]

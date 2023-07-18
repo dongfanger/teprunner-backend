@@ -43,14 +43,14 @@ def copy_folder(source_folder, destination_folder, ignore_folders):
 
 
 def create_scaffold(project_dir):
-    tep_dir = os.path.join(settings.BASE_DIR, "tep")
-    copy_folder(tep_dir, project_dir, [".idea", ".pytest_cache", "venv", "__pycache__"])
+    tep_dir = os.path.join(settings.SANDBOX_PATH, "tep-project")
+    copy_folder(tep_dir, project_dir, ignore_folders=[".idea", ".pytest_cache", "venv", "__pycache__", ".git"])
 
 
 @api_view(['POST'])
 def startproject(request, *args, **kwargs):
     export_dir = os.path.join(settings.BASE_DIR, "export")
-    temp_dir = os.path.join(export_dir, "new_project")
+    temp_dir = os.path.join(export_dir, "newProject")
     create_scaffold(temp_dir)
     zip_filepath = os.path.join(export_dir, "newProject.zip")
     make_zip(temp_dir, zip_filepath)

@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     'corsheaders',  # 跨域访问
     'user.apps.UserConfig',  # 用户模块
     'teprunner.apps.TeprunnerConfig',
-    'channels',  # websocket
     'django_apscheduler',
 ]
 
@@ -154,25 +153,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = ()
 
 # ---------------- 跨域访问配置结束 ---------------------
-
-
-# ---------------- websocket配置开始 ---------------------
-ASGI_APPLICATION = 'teprunnerbackend.asgi.application'  # ASGI应用配置
-
-# 一种通信系统
-CHANNEL_LAYERS = {
-    "default": {
-        # InMemoryChannelLayer 内存
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-
-        # RedisChannelLayer Redis（生产建议用这个）
-        # "BACKEND": "channels_redis.core.RedisChannelLayer",
-        # "CONFIG": {
-        #     "hosts": [("127.0.0.1", 6379)],
-        # },
-    }
-}
-# ---------------- websocket配置结束 ---------------------
 
 MENU_AUTH = {
     "管理员": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": True}],

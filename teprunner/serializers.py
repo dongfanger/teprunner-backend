@@ -11,7 +11,7 @@ import os.path
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
-from teprunner.models import Project, EnvVar, Fixture, Case, CaseResult, Plan, PlanCase, PlanResult
+from teprunner.models import Project, Case, Task, TaskCase, TaskResult
 from teprunnerbackend.settings import SANDBOX_PATH
 
 
@@ -30,132 +30,16 @@ class ProjectSerializer(serializers.ModelSerializer):
         return instance.last_sync_time.strftime("%Y-%m-%d %H:%M:%S") if instance.last_sync_time else ""
 
 
-class EnvVarSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(required=False)
-    curProjectId = serializers.CharField(source="project_id")
-    curEnvName = serializers.CharField(source="env_name")
-
-    class Meta:
-        model = EnvVar
-        fields = ["id", "name", "value", "desc", "curProjectId", "curEnvName"]
-
-
-class FixtureSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(required=False)
-    creatorNickname = serializers.CharField(source="creator_nickname")
-    curProjectId = serializers.CharField(source="project_id")
-
-    class Meta:
-        model = Fixture
-        fields = ["id", "name", "desc", "code", "creatorNickname", "curProjectId"]
-
-
 class CaseSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
-    creatorNickname = serializers.CharField(source="creator_nickname")
+    creatorNickname = serializers.CharField(source="creator_nickname", required=False)
     projectId = serializers.CharField(source="project_id")
-    filename = serializers.CharField(required=False)
-    code = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Case
-        fields = ["id", "desc", "creatorNickname", "projectId", "filename", "filepath", "code"]
+        fields = ["id", "desc", "creatorNickname", "projectId", "filename", "filepath"]
 
-    def get_code(self, instance):
-        filepath = instance.filepath
-        filepath_abs = os.path.join(SANDBOX_PATH, filepath)
-        with open(filepath_abs, encoding="utf8") as f:
-            return f.read()
-
-
-
-class CaseListSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(required=False)
-    creatorNickname = serializers.CharField(source="creator_nickname")
-    projectId = serializers.CharField(source="project_id")
-
-    result = serializers.SerializerMethodField(required=False)
-    elapsed = serializers.SerializerMethodField(required=False)
-    runEnv = serializers.SerializerMethodField(required=False)
-    runUserNickname = serializers.SerializerMethodField(required=False)
-    runTime = serializers.SerializerMethodField(required=False)
-
-    class Meta:
-        model = Case
-        fields = ["id", "desc", "creatorNickname", "projectId",
-                  "result", "elapsed", "runEnv", "runUserNickname", "runTime"]
-
-    def get_result(self, instance):
-        case_id = instance.id
-        try:
-            case_result = CaseResult.objects.filter(case_id=case_id).order_by('-run_time')
-            if case_result:
-                result = case_result[0].result
-                return result
-        except ObjectDoesNotExist:
-            return ""
-        return ""
-
-    def get_elapsed(self, instance):
-        case_id = instance.id
-        try:
-            case_result = CaseResult.objects.filter(case_id=case_id).order_by('-run_time')
-            if case_result:
-                elapsed = case_result[0].elapsed
-                return elapsed
-        except ObjectDoesNotExist:
-            return ""
-        return ""
-
-    def get_runEnv(self, instance):
-        case_id = instance.id
-        try:
-            case_result = CaseResult.objects.filter(case_id=case_id).order_by('-run_time')
-            if case_result:
-                run_env = case_result[0].run_env
-                return run_env
-        except ObjectDoesNotExist:
-            return ""
-        return ""
-
-    def get_runUserNickname(self, instance):
-        case_id = instance.id
-        try:
-            case_result = CaseResult.objects.filter(case_id=case_id).order_by('-run_time')
-            if case_result:
-                run_user_nickname = case_result[0].run_user_nickname
-                return run_user_nickname
-        except ObjectDoesNotExist:
-            return ""
-        return ""
-
-    def get_runTime(self, instance):
-        case_id = instance.id
-        try:
-            case_result = CaseResult.objects.filter(case_id=case_id).order_by('-run_time')
-            if case_result:
-                run_time = case_result[0].run_time
-                return run_time.strftime("%Y-%m-%d %H:%M:%S")
-        except ObjectDoesNotExist:
-            return ""
-        return ""
-
-
-class CaseResultSerializer(serializers.ModelSerializer):
-    caseId = serializers.IntegerField(source="case_id")
-    runEnv = serializers.CharField(source="run_env")
-    runUserNickname = serializers.CharField(source="run_user_nickname")
-    runTime = serializers.SerializerMethodField(required=False)
-
-    class Meta:
-        model = CaseResult
-        fields = ["caseId", "result", "elapsed", "output", "runEnv", "runUserNickname", "runTime"]
-
-    def get_runTime(self, instance):
-        return instance.run_time.strftime("%Y-%m-%d %H:%M:%S")
-
-
-class PlanSerializer(serializers.ModelSerializer):
+class TaskSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
     projectId = serializers.CharField(source="project_id")
     taskStatus = serializers.CharField(source="task_status")
@@ -172,121 +56,121 @@ class PlanSerializer(serializers.ModelSerializer):
     runTime = serializers.SerializerMethodField(required=False)
 
     class Meta:
-        model = Plan
+        model = Task
         fields = ["id", "name", "projectId", "taskStatus", "taskCrontab", "taskRunEnv",
                   "caseNum", "passedNum", "failedNum", "errorNum", "elapsed", "runEnv", "runUserNickname", "runTime"]
 
     def get_caseNum(self, instance):
-        plan_id = instance.id
+        task_id = instance.id
         try:
-            case_num = len(PlanCase.objects.filter(plan_id=plan_id))
+            case_num = len(TaskCase.objects.filter(task_id=task_id))
         except ObjectDoesNotExist:
             return ""
         return str(case_num)
 
     def get_passedNum(self, instance):
-        plan_id = instance.id
+        task_id = instance.id
         try:
             passed_num = 0
-            for plan_result in PlanResult.objects.filter(plan_id=plan_id):
-                if ("passed" in plan_result.result
-                        and "failed" not in plan_result.result
-                        and "error" not in plan_result.result):
+            for task_result in TaskResult.objects.filter(task_id=task_id):
+                if ("passed" in task_result.result
+                        and "failed" not in task_result.result
+                        and "error" not in task_result.result):
                     passed_num += 1
         except ObjectDoesNotExist:
             return ""
         return str(passed_num)
 
     def get_failedNum(self, instance):
-        plan_id = instance.id
+        task_id = instance.id
         try:
             failed_num = 0
-            for plan_result in PlanResult.objects.filter(plan_id=plan_id):
-                if "failed" in plan_result.result and "error" not in plan_result.result:
+            for task_result in TaskResult.objects.filter(task_id=task_id):
+                if "failed" in task_result.result and "error" not in task_result.result:
                     failed_num += 1
         except ObjectDoesNotExist:
             return ""
         return str(failed_num)
 
     def get_errorNum(self, instance):
-        plan_id = instance.id
+        task_id = instance.id
         try:
             error_num = 0
-            for plan_result in PlanResult.objects.filter(plan_id=plan_id):
-                if "error" in plan_result.result:
+            for task_result in TaskResult.objects.filter(task_id=task_id):
+                if "error" in task_result.result:
                     error_num += 1
         except ObjectDoesNotExist:
             return ""
         return str(error_num)
 
     def get_elapsed(self, instance):
-        plan_id = instance.id
+        task_id = instance.id
         try:
             total_elapsed = 0
-            for plan_result in PlanResult.objects.filter(plan_id=plan_id):
-                total_elapsed += float(plan_result.elapsed.replace("s", ""))
+            for task_result in TaskResult.objects.filter(task_id=task_id):
+                total_elapsed += float(task_result.elapsed.replace("s", ""))
         except ObjectDoesNotExist:
             return ""
         return str(total_elapsed)[:4] + "s"
 
     def get_runEnv(self, instance):
-        plan_id = instance.id
+        task_id = instance.id
         try:
-            plan_results = PlanResult.objects.filter(plan_id=plan_id)
+            task_results = TaskResult.objects.filter(task_id=task_id)
         except ObjectDoesNotExist:
             return ""
         run_env = ""
-        if plan_results:
-            run_env = plan_results[0].run_env
+        if task_results:
+            run_env = task_results[0].run_env
         return run_env
 
     def get_runUserNickname(self, instance):
-        plan_id = instance.id
+        task_id = instance.id
         try:
-            plan_results = PlanResult.objects.filter(plan_id=plan_id)
+            task_results = TaskResult.objects.filter(task_id=task_id)
         except ObjectDoesNotExist:
             return ""
         run_user_nickname = ""
-        if plan_results:
-            run_user_nickname = plan_results[0].run_user_nickname
+        if task_results:
+            run_user_nickname = task_results[0].run_user_nickname
         return run_user_nickname
 
     def get_runTime(self, instance):
-        plan_id = instance.id
+        task_id = instance.id
         try:
-            plan_results = PlanResult.objects.filter(plan_id=plan_id)
+            task_results = TaskResult.objects.filter(task_id=task_id)
         except ObjectDoesNotExist:
             return ""
         run_time = ""
-        if plan_results:
-            run_time = plan_results.order_by('run_time')[0].run_time.strftime("%Y-%m-%d %H:%M:%S")
+        if task_results:
+            run_time = task_results.order_by('run_time')[0].run_time.strftime("%Y-%m-%d %H:%M:%S")
         return run_time
 
 
-class PlanCaseSerializer(serializers.ModelSerializer):
-    planId = serializers.CharField(source="plan_id")
+class TaskCaseSerializer(serializers.ModelSerializer):
+    taskId = serializers.CharField(source="task_id")
     caseId = serializers.CharField(source="case_id")
     caseDesc = serializers.SerializerMethodField(required=False)
     caseCreatorNickname = serializers.SerializerMethodField(required=False)
 
     class Meta:
-        model = PlanCase
+        model = TaskCase
 
-        fields = ["planId", "caseId", "caseDesc", "caseCreatorNickname"]
+        fields = ["taskId", "caseId", "caseDesc", "caseCreatorNickname"]
 
     def get_caseDesc(self, instance):
-        plan_case_id = instance.id
-        case_id = PlanCase.objects.get(id=plan_case_id).case_id
+        task_case_id = instance.id
+        case_id = TaskCase.objects.get(id=task_case_id).case_id
         return Case.objects.get(id=case_id).desc
 
     def get_caseCreatorNickname(self, instance):
-        plan_case_id = instance.id
-        case_id = PlanCase.objects.get(id=plan_case_id).case_id
+        task_case_id = instance.id
+        case_id = TaskCase.objects.get(id=task_case_id).case_id
         return Case.objects.get(id=case_id).creator_nickname
 
 
-class PlanResultSerializer(serializers.ModelSerializer):
-    planId = serializers.CharField(source="plan_id")
+class TaskResultSerializer(serializers.ModelSerializer):
+    taskId = serializers.CharField(source="task_id")
     caseId = serializers.CharField(source="case_id")
     caseDesc = serializers.SerializerMethodField(required=False)
     caseCreatorNickname = serializers.SerializerMethodField(required=False)
@@ -295,8 +179,8 @@ class PlanResultSerializer(serializers.ModelSerializer):
     runTime = serializers.SerializerMethodField()
 
     class Meta:
-        model = PlanResult
-        fields = ["planId", "caseId", "caseDesc", "caseCreatorNickname",
+        model = TaskResult
+        fields = ["taskId", "caseId", "caseDesc", "caseCreatorNickname",
                   "result", "elapsed", "output", "runEnv", "runUserNickname", "runTime"]
 
     def get_caseDesc(self, instance):
@@ -306,9 +190,9 @@ class PlanResultSerializer(serializers.ModelSerializer):
         return Case.objects.get(id=instance.case_id).creator_nickname
 
     def get_runTime(self, instance):
-        return PlanResult.objects.get(id=instance.id).run_time.strftime("%Y-%m-%d %H:%M:%S")
+        return TaskResult.objects.get(id=instance.id).run_time.strftime("%Y-%m-%d %H:%M:%S")
 
     def to_representation(self, obj):
-        ret = super(PlanResultSerializer, self).to_representation(obj)
+        ret = super(TaskResultSerializer, self).to_representation(obj)
         ret.pop('output')
         return ret

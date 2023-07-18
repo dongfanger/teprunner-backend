@@ -12,6 +12,8 @@ from rest_framework.viewsets import ModelViewSet
 
 from teprunner.models import Project, Case
 from teprunner.serializers import ProjectSerializer, CaseSerializer
+from teprunner.utils.git_util import git_pull
+from teprunnerbackend.settings import SANDBOX_PATH
 
 
 class ProjectViewSet(ModelViewSet):
@@ -54,98 +56,60 @@ def project_env(request, *args, **kwargs):
 
 
 class GitSyncConfig:
-    _views_dir = os.path.dirname(os.path.abspath(__file__))
-    _teprunner_dir = os.path.dirname(_views_dir)
-    projects_root = os.path.join(_teprunner_dir, "projects")
     project_id = ""
     project_name = ""
-    project_git_temp_dir = os.path.join(projects_root, "project_git")
-    tests_dir = ""
 
 
-def file_desc_author(file):
-    desc = ""
-    author = ""
-    line_no = 0
-    with open(file, encoding="utf8") as f:
-        for line in f.read().splitlines():
-            if line.startswith("@Desc"):
-                _, desc = line.replace(" ", "").split(":")
-            if line.startswith("@Author"):
-                _, author = line.replace(" ", "").split(":")
-            if line_no > 10:
-                break
-            line_no += 1
-    return desc, author
-
-
-def read_git_file(filename):
-    file = os.path.join(GitSyncConfig.tests_dir, filename)
-    with open(file, encoding="utf8") as f:
-        desc, author = file_desc_author(file)
-        data = {
-            "desc": desc if desc else filename,
-            "code": f.read(),
-            "creatorNickname": author if author else "git",
-            "projectId": GitSyncConfig.project_id,
-            "filename": filename,
-            "source": "git"
-        }
-    return data
-
-
-def git_pull():
+def pull():
     project = Project.objects.get(id=GitSyncConfig.project_id)
     repository = project.git_repository
     branch = project.git_branch
-    GitSyncConfig.project_name = re.findall(r"^.*/(.*).git", repository)[0]
-
-    if not os.path.exists(GitSyncConfig.projects_root):
-        os.mkdir(GitSyncConfig.projects_root)
-    if not os.path.exists(GitSyncConfig.project_git_temp_dir):
-        os.mkdir(GitSyncConfig.project_git_temp_dir)
-    os.chdir(GitSyncConfig.project_git_temp_dir)
-    if not os.path.exists(GitSyncConfig.project_name):
-        os.system(f"git clone -b {branch} {repository}")
-    else:
-        os.chdir(GitSyncConfig.project_name)
-        os.system(f"git checkout {branch}")
-        os.system("git pull")
+    GitSyncConfig.project_name = git_pull(repository, branch, SANDBOX_PATH)
 
 
-def sync_case():
-    git_filenames = []
-    GitSyncConfig.tests_dir = os.path.join(GitSyncConfig.project_git_temp_dir, GitSyncConfig.project_name, "tests")
-    for root, _, files in os.walk(GitSyncConfig.tests_dir):
+def save():
+    git_files = []
+    tests_dir = os.path.join(SANDBOX_PATH, GitSyncConfig.project_name, "tests")
+    for root, _, files in os.walk(tests_dir):
         for file in files:
-            if os.path.isfile(os.path.join(root, file)):
+            abs_path = os.path.join(root, file)
+            if os.path.isfile(abs_path):
                 if (file.startswith("test_") or file.endswith("_test")) and file.endswith(".py"):
-                    filename = os.path.join(root, file).replace(GitSyncConfig.tests_dir, "").strip(os.sep)
-                    git_filenames.append(filename)
-    git_filenames = set(git_filenames)
+                    filename = abs_path.replace(tests_dir, "").strip(os.sep)
+                    filepath = abs_path.replace(SANDBOX_PATH, "").strip(os.sep)
+                    git_files.append((filename, filepath))
+    git_files = set(git_files)
 
-    cases = Case.objects.filter(source="git")
-    db_filenames = set(case.filename for case in cases)
+    project_id = GitSyncConfig.project_id
+    cases = Case.objects.filter(project_id=project_id)
+    db_files = set((case.filename, case.filepath) for case in cases)
 
-    print(git_filenames)
+    to_delete_cases = db_files - git_files
+    to_add_cases = git_files - db_files
+    to_update_cases = git_files & db_files
 
-    to_delete_cases = db_filenames - git_filenames
-    to_add_cases = git_filenames - db_filenames
-    to_update_cases = git_filenames & db_filenames
-
-    for filename in to_delete_cases:
-        case = Case.objects.get(filename=filename)
+    for _, filepath in to_delete_cases:
+        case = Case.objects.get(project_id=project_id, filepath=filepath)
         case.delete()
 
-    for filename in to_add_cases:
-        data = read_git_file(filename)
+    data = {
+            "desc": "desc",
+            "creatorNickname": "admin",
+            "projectId": GitSyncConfig.project_id,
+            "filename": "",
+            "filepath": ""
+    }
+    for filename, filepath in to_add_cases:
+        data["filename"] = filename
+        data["filepath"] = filepath
         serializer = CaseSerializer(data=data)
         serializer.is_valid()
         serializer.save()
 
-    for filename in to_update_cases:
-        data = read_git_file(filename)
-        case = Case.objects.get(filename=filename)
+    for filename, filepath in to_update_cases:
+        data["filename"] = filename
+        data["filepath"] = filepath
+        case = Case.objects.get(project_id=project_id, filepath=filepath)
         serializer = CaseSerializer(instance=case, data=data)
         serializer.is_valid()
         serializer.save()
@@ -155,8 +119,8 @@ def sync_case():
 def git_sync(request, *args, **kwargs):
     project_id = kwargs["pk"]
     GitSyncConfig.project_id = project_id
-    git_pull()
-    sync_case()
+    pull()
+    save()
     project = Project.objects.get(id=project_id)
     project.last_sync_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
     project.save()

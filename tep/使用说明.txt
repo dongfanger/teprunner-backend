@@ -1,8 +1,0 @@
-安装：
-pip install -r requirements.txt
-（国内镜像速度比较快，pip install --default-timeout=6000 -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt）
-教程：
-https://dongfanger.gitee.io/blog/
-
-根据需要手动安装依赖：
-【MySQL】依赖库：pandas, sqlalchemy, pymysql, texttable, cryptography
