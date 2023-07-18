@@ -22,20 +22,57 @@ class Project(BaseTable):
     last_sync_time = models.DateTimeField("运行时间", null=True, blank=True)
 
 
+class EnvVar(BaseTable):
+    class Meta:
+        db_table = "env_var"
+        unique_together = (("project_id", "env_name", "name"),)
+
+    name = models.CharField("变量名", max_length=50, null=False)
+    value = models.CharField("变量值", max_length=100, null=False)
+    desc = models.CharField("描述", max_length=200, default="")
+    project_id = models.IntegerField("项目id", null=False)
+    env_name = models.CharField("环境名称", max_length=20, null=False)
+
+
+class Fixture(BaseTable):
+    class Meta:
+        db_table = "fixture"
+
+    name = models.CharField("fixture名称", max_length=100, null=False)
+    desc = models.CharField("fixture描述", max_length=500, default="")
+    code = models.TextField("代码", max_length=30000, null=False)
+    creator_nickname = models.CharField("创建人昵称", null=False, max_length=64)
+    project_id = models.IntegerField("项目id", null=False)
+
+
 class Case(BaseTable):
     class Meta:
         db_table = "case"
 
     desc = models.CharField("用例描述", max_length=500, null=False)
-    creator_id = models.IntegerField("创建人id", null=False, default=0)
+    code = models.TextField("代码", max_length=30000, null=False)
+    creator_nickname = models.CharField("创建人昵称", null=False, max_length=64)
     project_id = models.IntegerField("项目id", null=False)
     filename = models.CharField("文件名", max_length=200, null=False, default="")
-    filepath = models.CharField("文件路径", max_length=500, null=False, default="")
+    source = models.CharField("用例来源", max_length=10, null=False, default="platform")
 
 
-class Task(models.Model):
+class CaseResult(BaseTable):
     class Meta:
-        db_table = "task"
+        db_table = "case_result"
+
+    case_id = models.IntegerField("用例id", null=False)
+    result = models.CharField("运行结果", max_length=50, null=False)
+    elapsed = models.CharField("耗时", max_length=50, null=False)
+    output = models.TextField("输出日志", null=False, default="")
+    run_env = models.CharField("运行环境", max_length=20, null=False)
+    run_user_nickname = models.CharField("运行用户昵称", null=False, max_length=64)
+    run_time = models.DateTimeField("运行时间", auto_now=True)
+
+
+class Plan(models.Model):
+    class Meta:
+        db_table = "plan"
 
     name = models.CharField("测试计划名称", max_length=50, null=False)
     project_id = models.IntegerField("项目id", null=False)
@@ -44,21 +81,23 @@ class Task(models.Model):
     task_run_env = models.CharField("定时任务运行环境", max_length=20, null=True, blank=True, default="")
 
 
-class TaskCase(models.Model):
+class PlanCase(models.Model):
     class Meta:
-        db_table = "task_case"
+        db_table = "plan_case"
 
-    task_id = models.IntegerField("任务id", null=False)
+    plan_id = models.IntegerField("测试计划id", null=False)
     case_id = models.IntegerField("用例id", null=False)
 
 
-class TaskResult(models.Model):
+class PlanResult(models.Model):
     class Meta:
-        db_table = "task_result"
+        db_table = "plan_result"
 
-    task_id = models.IntegerField("任务id", null=False)
+    plan_id = models.IntegerField("计划id", null=False)
+    case_id = models.IntegerField("用例id", null=False)
     result = models.CharField("运行结果", max_length=50, null=False)
+    elapsed = models.CharField("耗时", max_length=50, null=False)
+    output = models.TextField("输出日志", null=False, default="")
     run_env = models.CharField("运行环境", max_length=20, null=False)
+    run_user_nickname = models.CharField("运行用户昵称", null=False, max_length=64)
     run_time = models.DateTimeField("运行时间", auto_now=True)
-    run_user_id = models.IntegerField("运行人id", null=False, default=0)
-    report_path = models.CharField("测试报告", max_length=300, null=False, default="")

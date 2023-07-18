@@ -9,17 +9,10 @@
 
 from django.urls import path
 
-from teprunner.views import project, run, task, mock, tep_scaffold
+from teprunner.views import project, envvar, fixture, case, run, plan
 
 urlpatterns = [
-    path(r"scaffold", tep_scaffold.startproject),  # 项目脚手架
-
-    path(r"mock/searchSku", mock.search_sku),
-    path(r"mock/addCart", mock.add_cart),
-    path(r"mock/order", mock.order),
-    path(r"mock/pay", mock.pay),
-
-    # ------------------项目开始------------------
+    # ------------------项目增删改查开始------------------
     path(r"projects", project.ProjectViewSet.as_view({
         "get": "list",
         "post": "create"
@@ -29,31 +22,67 @@ urlpatterns = [
         "put": "update",
         "delete": "destroy"
     })),
+    # ------------------项目增删改查结束------------------
+
     path(r"projects/env", project.project_env),  # 项目环境下拉框选项
     path(r"projects/<int:pk>/gitSync", project.git_sync),
-    # ------------------项目结束------------------
+    path(r"projects/<int:pk>/export", project.export_project),
 
-    # ------------------任务开始------------------
-    path(r"tasks", task.TaskViewSet.as_view({
+    # ------------------环境变量增删改查开始------------------
+    path(r"envvars", envvar.EnvVarViewSet.as_view({
         "get": "list",
         "post": "create"
     })),
-    path(r"tasks/<int:pk>", task.TaskViewSet.as_view({
+    path(r"envvars/<int:pk>", envvar.EnvVarViewSet.as_view({
         "get": "retrieve",
         "put": "update",
         "delete": "destroy"
     })),
-    path(r"cases", task.cases),
-    path(r"tasks/<int:task_id>/cases", task.TaskCaseView.as_view({
+    # ------------------环境变量增删改查结束------------------
+
+    # ------------------fixture增删改查开始------------------
+    path(r"fixtures", fixture.FixtureViewSet.as_view({
+        "get": "list",
+        "post": "create"
+    })),
+    path(r"fixtures/<int:pk>", fixture.FixtureViewSet.as_view({
+        "get": "retrieve",
+        "put": "update",
+        "delete": "destroy"
+    })),
+    # ------------------fixture增删改查结束------------------
+
+    # ------------------用例增删改查开始------------------
+    path(r"cases", case.CaseViewSet.as_view({
+        "get": "list",
+        "post": "create"
+    })),
+    path(r"cases/<int:pk>", case.CaseViewSet.as_view({
+        "get": "retrieve",
+        "put": "update",
+        "delete": "destroy"
+    })),
+    # ------------------用例增删改查开始------------------
+    path(r"cases/<int:pk>/copy", case.copy_case),  # 复制用例
+    path(r"cases/<int:pk>/run", run.run_case),  # 运行用例
+
+    path(r"plans", plan.PlanViewSet.as_view({
+        "get": "list",
+        "post": "create"
+    })),
+    path(r"plans/<int:pk>", plan.PlanViewSet.as_view({
+        "get": "retrieve",
+        "put": "update",
+        "delete": "destroy"
+    })),
+    path(r"plans/<int:plan_id>/cases", plan.PlanCaseView.as_view({
         "get": "list",
         "post": "add",
     })),
-    path(r"tasks/<int:task_id>/cases/<int:case_id>", task.TaskCaseView.as_view({
+    path(r"plans/<int:plan_id>/cases/<int:case_id>", plan.PlanCaseView.as_view({
         "delete": "remove"
     })),
-    path(r"tasks/<int:task_id>/run", run.run_task),
-    path(r"tasks/<int:task_id>/result", task.result),
-    path(r"tasks/<int:task_id>/cases/<int:case_id>/result", task.case_result),
-    path(r"tasks/<int:task_id>/report", task.report),
-    # ------------------任务结束------------------
+    path(r"plans/<int:plan_id>/run", run.run_plan),
+    path(r"plans/<int:plan_id>/result", plan.result),
+    path(r"plans/<int:plan_id>/cases/<int:case_id>/result", plan.case_result),
 ]

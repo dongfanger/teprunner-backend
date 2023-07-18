@@ -1,5 +1,4 @@
+db.sqlite3
 .idea
 __pycache__/
 projects/
-export/
-.pytest_cache

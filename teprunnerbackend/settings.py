@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 import datetime
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -37,6 +36,7 @@ INSTALLED_APPS = [
     'corsheaders',  # 跨域访问
     'user.apps.UserConfig',  # 用户模块
     'teprunner.apps.TeprunnerConfig',
+    'channels',  # websocket
     'django_apscheduler',
 ]
 
@@ -76,8 +76,12 @@ WSGI_APPLICATION = 'teprunnerbackend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': 'localhost',
+        'PORT': 3306,
+        'NAME': 'teprunner',
+        'USER': 'root',
+        'PASSWORD': '12345678'
     }
 }
 
@@ -154,10 +158,21 @@ CORS_ORIGIN_WHITELIST = ()
 
 # ---------------- 跨域访问配置结束 ---------------------
 
-MENU_AUTH = {
-    "管理员": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": True}],
-    "测试": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": False}],
-    "开发": [{"id": "teprunner", "name": "接口自动化", "access": True}, {"id": "console", "name": "后台管理", "access": False}]
-}
 
-SANDBOX_PATH = os.path.join(BASE_DIR, "teprunner", "sandbox")
+# ---------------- websocket配置开始 ---------------------
+ASGI_APPLICATION = 'teprunnerbackend.asgi.application'  # ASGI应用配置
+
+# 一种通信系统
+CHANNEL_LAYERS = {
+    "default": {
+        # InMemoryChannelLayer 内存
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+
+        # RedisChannelLayer Redis（生产建议用这个）
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [("127.0.0.1", 6379)],
+        # },
+    }
+}
+# ---------------- websocket配置结束 ---------------------

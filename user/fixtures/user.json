@@ -15,6 +15,18 @@
     "pk": 1,
     "fields": {
       "name": "管理员",
+      "auth": [
+        {
+          "id": "teprunner",
+          "name": "接口自动化",
+          "access": true
+        },
+        {
+          "id": "console",
+          "name": "后台管理",
+          "access": true
+        }
+      ],
       "created_at": "2010-07-01T13:20:30+03:00",
       "updated_at": "2010-07-01T13:20:30+03:00"
     }
@@ -24,6 +36,18 @@
     "pk": 2,
     "fields": {
       "name": "测试",
+      "auth": [
+        {
+          "id": "teprunner",
+          "name": "接口自动化",
+          "access": true
+        },
+        {
+          "id": "console",
+          "name": "后台管理",
+          "access": false
+        }
+      ],
       "created_at": "2010-07-01T13:20:30+03:00",
       "updated_at": "2010-07-01T13:20:30+03:00"
     }
@@ -33,6 +57,18 @@
     "pk": 3,
     "fields": {
       "name": "开发",
+      "auth": [
+        {
+          "id": "teprunner",
+          "name": "接口自动化",
+          "access": true
+        },
+        {
+          "id": "console",
+          "name": "后台管理",
+          "access": false
+        }
+      ],
       "created_at": "2010-07-01T13:20:30+03:00",
       "updated_at": "2010-07-01T13:20:30+03:00"
     }
