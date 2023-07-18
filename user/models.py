@@ -31,6 +31,7 @@ class Role(BaseTable):
 
     name = models.CharField("角色名", null=False, max_length=64, default="")
 
+
 class UserRole(BaseTable):
     # 用户角色关系表
     class Meta:

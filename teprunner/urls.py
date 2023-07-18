@@ -54,5 +54,6 @@ urlpatterns = [
     path(r"tasks/<int:task_id>/run", run.run_task),
     path(r"tasks/<int:task_id>/result", task.result),
     path(r"tasks/<int:task_id>/cases/<int:case_id>/result", task.case_result),
+    path(r"tasks/<int:task_id>/report", task.report),
     # ------------------任务结束------------------
 ]

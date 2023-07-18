@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from teprunner.models import Project, Case
+from teprunner.models import Project, Case, TaskCase
 from teprunner.serializers import ProjectSerializer, CaseSerializer
 from teprunner.utils.git_util import git_pull
 from teprunnerbackend.settings import SANDBOX_PATH
@@ -91,6 +91,9 @@ def save():
     for _, filepath in to_delete_cases:
         case = Case.objects.get(project_id=project_id, filepath=filepath)
         case.delete()
+        task_case_list = TaskCase.objects.filter(case_id=case.id)  # 同时删除所有任务关联的用例
+        for task_case in task_case_list:
+            task_case.delete()
 
     data = {
             "desc": "desc",

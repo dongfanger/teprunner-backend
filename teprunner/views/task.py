@@ -6,10 +6,14 @@
 @Date    :  2021/2/7 9:35
 @Desc    :  
 """
+import os.path
+
+import jwt
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.triggers.cron import CronTrigger
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -19,6 +23,7 @@ from teprunner.models import Task, TaskCase, Case, TaskResult
 from teprunner.serializers import TaskSerializer, TaskCaseSerializer, TaskResultSerializer, CaseSerializer
 from teprunner.views.run import run_task_engine
 from teprunner.views.schedule import scheduler
+from teprunnerbackend.settings import SANDBOX_PATH
 from user.pagination import CustomPagination
 
 
@@ -192,6 +197,7 @@ def cases(request, *args, **kwargs):
         serializer = CaseSerializer(page, many=True)
         return cp.get_paginated_response(serializer.data)
 
+
 @api_view(['GET'])
 def result(request, *args, **kwargs):
     search_type = request.GET.get("searchType")
@@ -234,3 +240,18 @@ def case_result(request, *args, **kwargs):
         "runTime": task_result.run_time.strftime("%Y-%m-%d %H:%M:%S")
     }
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def report(request, *args, **kwargs):
+    task_id = kwargs["task_id"]
+    request_jwt = request.headers.get("Authorization").replace("Bearer ", "")
+    request_jwt_decoded = jwt.decode(request_jwt, verify=False, algorithms=['HS512'])
+    run_user_id = request_jwt_decoded["user_id"]
+    task_result = TaskResult.objects.filter(task_id=task_id, run_user_id=run_user_id).order_by('-run_time')[0]
+    report_path = task_result.report_path
+
+    with open(os.path.join(SANDBOX_PATH, report_path), 'r') as f:
+        html_content = f.read()
+
+    return HttpResponse(html_content, content_type='text/html')

@@ -6,13 +6,12 @@
 @Date    :  2020/12/24 14:50
 @Desc    :  
 """
-import os.path
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from teprunner.models import Project, Case, Task, TaskCase, TaskResult
-from teprunnerbackend.settings import SANDBOX_PATH
+from user.models import User
 
 
 class ProjectSerializer(serializers.ModelSerializer):
@@ -32,12 +31,18 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class CaseSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
-    creatorNickname = serializers.CharField(source="creator_nickname", required=False)
+    creatorNickname = serializers.SerializerMethodField(required=False)
     projectId = serializers.CharField(source="project_id")
 
     class Meta:
         model = Case
         fields = ["id", "desc", "creatorNickname", "projectId", "filename", "filepath"]
+
+    def get_creatorNickname(self, instance):
+        creator_id = instance.creator_id
+        user = User.objects.get(id=creator_id)
+        return user.nickname
+
 
 class TaskSerializer(serializers.ModelSerializer):
     id = serializers.CharField(required=False)
@@ -46,11 +51,6 @@ class TaskSerializer(serializers.ModelSerializer):
     taskCrontab = serializers.CharField(source="task_crontab", required=False, allow_blank=True)
     taskRunEnv = serializers.CharField(source="task_run_env", required=False, allow_blank=True)
 
-    caseNum = serializers.SerializerMethodField(required=False)
-    passedNum = serializers.SerializerMethodField(required=False)
-    failedNum = serializers.SerializerMethodField(required=False)
-    errorNum = serializers.SerializerMethodField(required=False)
-    elapsed = serializers.SerializerMethodField(required=False)
     runEnv = serializers.SerializerMethodField(required=False)
     runUserNickname = serializers.SerializerMethodField(required=False)
     runTime = serializers.SerializerMethodField(required=False)
@@ -58,60 +58,7 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ["id", "name", "projectId", "taskStatus", "taskCrontab", "taskRunEnv",
-                  "caseNum", "passedNum", "failedNum", "errorNum", "elapsed", "runEnv", "runUserNickname", "runTime"]
-
-    def get_caseNum(self, instance):
-        task_id = instance.id
-        try:
-            case_num = len(TaskCase.objects.filter(task_id=task_id))
-        except ObjectDoesNotExist:
-            return ""
-        return str(case_num)
-
-    def get_passedNum(self, instance):
-        task_id = instance.id
-        try:
-            passed_num = 0
-            for task_result in TaskResult.objects.filter(task_id=task_id):
-                if ("passed" in task_result.result
-                        and "failed" not in task_result.result
-                        and "error" not in task_result.result):
-                    passed_num += 1
-        except ObjectDoesNotExist:
-            return ""
-        return str(passed_num)
-
-    def get_failedNum(self, instance):
-        task_id = instance.id
-        try:
-            failed_num = 0
-            for task_result in TaskResult.objects.filter(task_id=task_id):
-                if "failed" in task_result.result and "error" not in task_result.result:
-                    failed_num += 1
-        except ObjectDoesNotExist:
-            return ""
-        return str(failed_num)
-
-    def get_errorNum(self, instance):
-        task_id = instance.id
-        try:
-            error_num = 0
-            for task_result in TaskResult.objects.filter(task_id=task_id):
-                if "error" in task_result.result:
-                    error_num += 1
-        except ObjectDoesNotExist:
-            return ""
-        return str(error_num)
-
-    def get_elapsed(self, instance):
-        task_id = instance.id
-        try:
-            total_elapsed = 0
-            for task_result in TaskResult.objects.filter(task_id=task_id):
-                total_elapsed += float(task_result.elapsed.replace("s", ""))
-        except ObjectDoesNotExist:
-            return ""
-        return str(total_elapsed)[:4] + "s"
+                  "runEnv", "runUserNickname", "runTime"]
 
     def get_runEnv(self, instance):
         task_id = instance.id
@@ -132,7 +79,8 @@ class TaskSerializer(serializers.ModelSerializer):
             return ""
         run_user_nickname = ""
         if task_results:
-            run_user_nickname = task_results[0].run_user_nickname
+            run_user_id = task_results[0].run_user_id
+            run_user_nickname = User.objects.get(id=run_user_id).nickname
         return run_user_nickname
 
     def get_runTime(self, instance):
@@ -166,33 +114,34 @@ class TaskCaseSerializer(serializers.ModelSerializer):
     def get_caseCreatorNickname(self, instance):
         task_case_id = instance.id
         case_id = TaskCase.objects.get(id=task_case_id).case_id
-        return Case.objects.get(id=case_id).creator_nickname
+        creator_id = Case.objects.get(id=case_id).creator_id
+        return User.objects.get(id=creator_id).nickname
 
 
 class TaskResultSerializer(serializers.ModelSerializer):
     taskId = serializers.CharField(source="task_id")
-    caseId = serializers.CharField(source="case_id")
     caseDesc = serializers.SerializerMethodField(required=False)
     caseCreatorNickname = serializers.SerializerMethodField(required=False)
     runEnv = serializers.CharField(source="run_env")
-    runUserNickname = serializers.CharField(source="run_user_nickname")
+    runUserNickname = serializers.SerializerMethodField()
     runTime = serializers.SerializerMethodField()
+    reportPath = serializers.CharField(source="report_path")
 
     class Meta:
         model = TaskResult
-        fields = ["taskId", "caseId", "caseDesc", "caseCreatorNickname",
-                  "result", "elapsed", "output", "runEnv", "runUserNickname", "runTime"]
+        fields = ["taskId", "caseDesc", "caseCreatorNickname",
+                  "result", "runEnv", "runUserNickname", "runTime", "reportPath"]
 
     def get_caseDesc(self, instance):
         return Case.objects.get(id=instance.case_id).desc
 
     def get_caseCreatorNickname(self, instance):
-        return Case.objects.get(id=instance.case_id).creator_nickname
+        creator_id = Case.objects.get(id=instance.case_id).creator_id
+        return User.objects.get(id=creator_id).nickname
+
+    def get_runUserNickname(self, instance):
+        run_user_id = instance.run_user_id
+        return User.objects.get(id=run_user_id).nickname
 
     def get_runTime(self, instance):
         return TaskResult.objects.get(id=instance.id).run_time.strftime("%Y-%m-%d %H:%M:%S")
-
-    def to_representation(self, obj):
-        ret = super(TaskResultSerializer, self).to_representation(obj)
-        ret.pop('output')
-        return ret

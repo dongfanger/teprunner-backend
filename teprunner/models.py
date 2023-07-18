@@ -27,7 +27,7 @@ class Case(BaseTable):
         db_table = "case"
 
     desc = models.CharField("用例描述", max_length=500, null=False)
-    creator_nickname = models.CharField("创建人昵称", null=False, max_length=64)
+    creator_id = models.IntegerField("创建人id", null=False, default=0)
     project_id = models.IntegerField("项目id", null=False)
     filename = models.CharField("文件名", max_length=200, null=False, default="")
     filepath = models.CharField("文件路径", max_length=500, null=False, default="")
@@ -57,10 +57,8 @@ class TaskResult(models.Model):
         db_table = "task_result"
 
     task_id = models.IntegerField("任务id", null=False)
-    case_id = models.IntegerField("用例id", null=False)
     result = models.CharField("运行结果", max_length=50, null=False)
-    elapsed = models.CharField("耗时", max_length=50, null=False)
-    output = models.TextField("输出日志", null=False, default="")
     run_env = models.CharField("运行环境", max_length=20, null=False)
-    run_user_nickname = models.CharField("运行用户昵称", null=False, max_length=64)
     run_time = models.DateTimeField("运行时间", auto_now=True)
+    run_user_id = models.IntegerField("运行人id", null=False, default=0)
+    report_path = models.CharField("测试报告", max_length=300, null=False, default="")

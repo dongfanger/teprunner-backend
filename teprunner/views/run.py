@@ -7,7 +7,9 @@
 @Desc    :  
 """
 import os
+import shutil
 import subprocess
+import time
 from concurrent.futures.thread import ThreadPoolExecutor
 
 import jwt
@@ -23,15 +25,21 @@ from teprunner.serializers import TaskResultSerializer
 from teprunnerbackend.settings import SANDBOX_PATH
 
 
-class ProjectPath:
+class TaskContext:
     def __init__(self, project_id):
-        # 初始化目录文件
         if not os.path.exists(SANDBOX_PATH):
             os.mkdir(SANDBOX_PATH)
 
         self.project_id = project_id
-        project_name = Case.objects.filter(project_id=project_id)[0].filepath.split(os.sep)[0]
-        self.sandbox_project_path = os.path.join(SANDBOX_PATH, project_name)
+        self.project_name = Case.objects.filter(project_id=project_id)[0].filepath.split(os.sep)[0]
+
+        self.current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime(time.time()))
+        self.case_count = 0
+        self.case_num = None
+        self.task_id = None
+        self.run_env = ""
+        self.run_user_id = None
+        self.container_task_path = ""
 
 
 def write_conf_yaml(project_dir, env_name):
@@ -45,87 +53,101 @@ def write_conf_yaml(project_dir, env_name):
         yaml.dump(conf, f)
 
 
-def find_case(tests_dir, cases):
+def find_case(cases):
     # 数据库查找用例
     for case in cases:
-        filepath = case.filename
+        filepath = case.filepath
         yield case.id, filepath
 
 
-def delete_task_result(task_id, case_id):
-    try:
-        instance = TaskResult.objects.get(task_id=task_id, case_id=case_id)
-        instance.delete()
-    except ObjectDoesNotExist:
-        pass
+def find_files_with_same_name(directory, known_file):
+    known_filename = os.path.basename(known_file)
+    known_file_name_without_extension = os.path.splitext(known_filename)[0]
+    same_name_files = []
+
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            if filename != known_filename:
+                file_name = os.path.splitext(filename)[0]
+                if file_name == known_file_name_without_extension:
+                    file_path = os.path.join(root, filename)
+                    same_name_files.append(file_path)
+
+    return same_name_files
 
 
-def pytest_subprocess(cmd, case_id, run_env, run_user_nickname, task_id=None):
-    # 执行pytest命令
-    output = subprocess.getoutput(cmd)
-    return output, cmd, case_id, run_env, run_user_nickname, task_id
+def pull_case(filepath, task_context):
+    file_path_abs = os.path.join(SANDBOX_PATH, filepath)
+    shutil.copy2(file_path_abs, task_context.container_task_path)
+    same_name_files = find_files_with_same_name(os.path.dirname(file_path_abs), filepath.split(os.sep)[-1])
+    if same_name_files:
+        same_name_file = same_name_files[0]
+        if same_name_file.endswith(".yml") or same_name_file.endswith(".yaml"):
+            shutil.copy2(same_name_file, task_context.container_task_path)
+
+    return task_context
 
 
-def save_case_result(pytest_result):
-    # 保存用例结果
-    output, cmd, case_id, run_env, run_user_nickname, task_id = pytest_result.result()
-    summary = output.split("\n")[-1]
-    elapsed = 0
-    try:
-        result, elapsed, = summary.strip("=").strip().split(" in ")
-        elapsed = elapsed.split(" ")[0]
-    except:
-        result = "执行失败"
-    data = {
-        "taskId": task_id,
-        "caseId": case_id,
-        "result": result,
-        "elapsed": elapsed,
-        "output": output,
-        "runEnv": run_env,
-        "runUserNickname": run_user_nickname
-    }
-    try:
-        instance = TaskResult.objects.get(task_id=task_id, case_id=case_id, run_user_nickname=run_user_nickname)
-        serializer = TaskResultSerializer(data=data, instance=instance)  # 更新
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-    except ObjectDoesNotExist:  # 新增
-        serializer = TaskResultSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+def save_task_result(pytest_result):
+    task_context = pytest_result.result()
+    task_context.case_count += 1
+    if task_context.case_count == task_context.case_num:
+        os.chdir(task_context.container_task_path)
+        report_path = os.path.join(task_context.project_name, "reports", task_context.current_time + ".html")
+        cmd = f"pytest --html={os.path.join(SANDBOX_PATH, report_path)} --self-contained-html"
+        subprocess.getoutput(cmd)
+        data = {
+            "taskId": task_context.task_id,
+            "result": "执行成功",
+            "runEnv": task_context.run_env,
+            "runUserId": task_context.run_user_id,
+            "reportPath": report_path
+        }
+        try:
+            instance = TaskResult.objects.get(task_id=task_context.task_id, run_user_id=task_context.run_user_id)
+            serializer = TaskResultSerializer(data=data, instance=instance)  # 更新
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        except ObjectDoesNotExist:  # 新增
+            serializer = TaskResultSerializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
 
-def run_task_engine(project_id, task_id, run_env, run_user_nickname):
-    p = ProjectPath(project_id)
-
-    if not os.path.exists(p.sandbox_project_path):
-        os.chdir(SANDBOX_PATH)
-        # todo clone
+def run_task_engine(project_id, task_id, run_env, run_user_id):
+    task_context = TaskContext(project_id)
+    container_path = os.path.join(SANDBOX_PATH, task_context.project_name, "container")
+    if not os.path.exists(container_path):
+        os.mkdir(container_path)
+    container_task_path = os.path.join(container_path, f"{str(task_id)}-{task_context.current_time}")
+    os.chdir(SANDBOX_PATH)
+    if not os.path.exists(container_task_path):
+        os.mkdir(container_task_path)
+    task_context.container_task_path = container_task_path
 
     # todo 激活环境tep.yaml
+
     task_case_ids = [task_case.case_id for task_case in TaskCase.objects.filter(task_id=task_id)]
     case_list = Case.objects.filter(Q(id__in=task_case_ids))
     thread_pool = ThreadPoolExecutor()
-    tests_dir = os.path.join(p.sandbox_project_path, "tests")
-    for case_to_run in find_case(tests_dir, case_list):
+    task_context.case_num = len(case_list)
+    task_context.run_env = run_env
+    task_context.run_user_id = run_user_id
+    task_context.task_id = task_id
+    for case_to_run in find_case(case_list):
         case_id, filepath = case_to_run
-        delete_task_result(task_id, case_id)
-        os.chdir(tests_dir)
-        cmd = rf"pytest -s {filepath}"
-        args = (pytest_subprocess, cmd, case_id, run_env, run_user_nickname, task_id)
-        thread_pool.submit(*args).add_done_callback(save_case_result)
+        args = (pull_case, filepath, task_context)
+        thread_pool.submit(*args).add_done_callback(save_task_result)
 
 
 @api_view(['POST'])
 def run_task(request, *args, **kwargs):
     task_id = kwargs["task_id"]
     run_env = request.data.get("runEnv")
-    run_user_nickname = request.data.get("runUserNickname")
     project_id = Task.objects.get(id=task_id).project_id
     request_jwt = request.headers.get("Authorization").replace("Bearer ", "")
     request_jwt_decoded = jwt.decode(request_jwt, verify=False, algorithms=['HS512'])
-    user_id = request_jwt_decoded["user_id"]
-    run_task_engine(project_id, task_id, run_env, run_user_nickname)
+    run_user_id = request_jwt_decoded["user_id"]
+    run_task_engine(project_id, task_id, run_env, run_user_id)
 
     return Response({"msg": "计划运行成功"}, status=status.HTTP_200_OK)
